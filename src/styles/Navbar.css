@@ -1,0 +1,48 @@
+.navbar {
+    display: flex;
+    justify-content: center;
+    background-color: #4CAF50;
+    padding: 1rem;
+}
+
+/* Add styles to arrange navbar links horizontally */
+.navbar-list {
+  display: flex;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.navbar-item {
+  margin-right: 20px;
+}
+
+.navbar a {
+    color: white;
+    text-decoration: none;
+    padding: 0.5rem 1rem;
+    margin: 0 1rem;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+.navbar a:hover {
+    background-color: #45a049;
+}
+
+.navbar a.active {
+    background-color: #3e8e41;
+}
+
+/* Add responsive styles for Navbar */
+@media (max-width: 768px) {
+  .navbar-list {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .navbar-item {
+    margin-bottom: 10px;
+    margin-right: 0;
+  }
+}

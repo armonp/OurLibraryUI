@@ -1,0 +1,32 @@
+[
+    {
+        "title": "The Great Gatsby",
+        "author": "F. Scott Fitzgerald",
+        "isbn": "9780743273565",
+        "cover": "https://example.com/great-gatsby.jpg"
+    },
+    {
+        "title": "To Kill a Mockingbird",
+        "author": "Harper Lee",
+        "isbn": "9780061120084",
+        "cover": "https://example.com/to-kill-a-mockingbird.jpg"
+    },
+    {
+        "title": "1984",
+        "author": "George Orwell",
+        "isbn": "9780451524935",
+        "cover": "https://example.com/1984.jpg"
+    },
+    {
+        "title": "Pride and Prejudice",
+        "author": "Jane Austen",
+        "isbn": "9781503290563",
+        "cover": "https://example.com/pride-and-prejudice.jpg"
+    },
+    {
+        "title": "The Catcher in the Rye",
+        "author": "J.D. Salinger",
+        "isbn": "9780316769488",
+        "cover": "https://example.com/catcher-in-the-rye.jpg"
+    }
+]
