@@ -9,7 +9,54 @@ import NewBookForm from "./components/NewBookForm";
 import Wishlist from "./components/Wishlist";
 import Home from "./components/Home";
 
+const API_URL = "http://localhost:5089";
+
 const App: React.FC = () => {
+  // We don't need to maintain a separate wishlist state since we'll fetch from the API
+
+  const handleAddBook = async (
+    book: {
+      title: string;
+      author: string;
+      isbn: string;
+      coverURL?: string;
+    },
+    destination: string = "bookshelf"
+  ) => {
+    try {
+      // Set the appropriate status based on destination
+      const status = destination === "wishlist" ? "Wanted" : "Owned";
+
+      // Add to Cosmos DB via API with the appropriate status
+      const response = await fetch(`${API_URL}/v1/Books`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          isbn: book.isbn,
+          title: book.title,
+          author: book.author,
+          coverURL: book.coverURL,
+          status: status,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to add book: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const addedBook = await response.json();
+      console.log("Book added to collection:", addedBook);
+      return addedBook;
+    } catch (error) {
+      console.error("Error adding book:", error);
+      return null;
+    }
+  };
+
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -22,13 +69,9 @@ const App: React.FC = () => {
             <Route path="/bookshelf/:id" element={<BookDetail />} />
             <Route
               path="/new-book"
-              element={
-                <NewBookForm
-                  onAddBook={(book) => console.log("New book added:", book)}
-                />
-              }
+              element={<NewBookForm onAddBook={handleAddBook} />}
             />
-            <Route path="/wishlist" element={<Wishlist books={[]} />} />
+            <Route path="/wishlist" element={<Wishlist />} />
           </Routes>
         </div>
       </Router>

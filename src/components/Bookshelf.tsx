@@ -48,7 +48,9 @@ const Bookshelf: React.FC = () => {
         }
 
         const data = await response.json();
-        setBooks(data);
+        // Filter to only show books with "Owned" status
+        const ownedBooks = data.filter((book: Book) => book.status === "Owned");
+        setBooks(ownedBooks);
         setError(null);
       } catch (err) {
         console.error("Error fetching books:", err);
