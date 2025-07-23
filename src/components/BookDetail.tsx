@@ -28,7 +28,8 @@ import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 // Define the Book interface to match with backend
 interface Book {
   id: string;
-  isbn: string;
+  ISBN: string; // Changed from lowercase isbn to uppercase ISBN to match backend model
+  isbn?: string; // Keep lowercase for backward compatibility
   title: string;
   author?: string;
   coverURL?: string;
@@ -107,7 +108,7 @@ const BookDetail: React.FC = () => {
   }, [id, location.state]);
 
   const fetchBookCover = async () => {
-    if (!book || !book.isbn) {
+    if (!book || !(book.ISBN || book.isbn)) {
       return;
     }
 
@@ -394,13 +395,15 @@ const BookDetail: React.FC = () => {
                   transition: "all 0.3s ease",
                 }}
               />
-              {!book.coverURL && book.isbn && (
+              {!book.coverURL && (book.ISBN || book.isbn) && (
                 <Button
-                  variant="contained"
-                  color="primary"
+                  variant="outlined"
+                  size="small"
                   onClick={fetchBookCover}
                   disabled={loadingCover}
-                  sx={{ mt: 2 }}
+                  startIcon={
+                    loadingCover ? <CircularProgress size={16} /> : undefined
+                  }
                 >
                   {loadingCover ? "Finding Cover..." : "Find Cover Image"}
                 </Button>
@@ -543,7 +546,7 @@ const BookDetail: React.FC = () => {
               </Typography>
               <Box sx={{ mt: 3 }}>
                 <Typography variant="body1" gutterBottom>
-                  <strong>ISBN:</strong> {book.isbn}
+                  <strong>ISBN:</strong> {book.ISBN || book.isbn}
                 </Typography>
                 {book.publishedYear && (
                   <Typography variant="body1" gutterBottom>

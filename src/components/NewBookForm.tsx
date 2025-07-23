@@ -47,7 +47,8 @@ interface NewBookFormProps {
 // Define the Book type to match backend data structure
 interface Book {
   id: string;
-  isbn: string;
+  ISBN: string; // Changed from lowercase isbn to uppercase ISBN to match backend model
+  isbn?: string; // Keep lowercase for backward compatibility
   title: string;
   author?: string;
   coverURL?: string;
@@ -160,6 +161,9 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
       }
 
       const data = await response.json();
+
+      // Process search results
+
       setSearchResults(data);
 
       if (data.length === 0) {
@@ -180,11 +184,13 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     book: Book,
     destination: string = "bookshelf"
   ) => {
+    const isbn = book.ISBN || book.isbn || "";
+
     const result = await onAddBook(
       {
         title: book.title,
         author: book.author || "Unknown",
-        isbn: book.isbn,
+        isbn: isbn, // Use uppercase ISBN with fallback to lowercase
         coverURL: book.coverURL,
         publishedYear: book.publishedYear,
         publishers: book.publishers,
@@ -427,17 +433,6 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                         >
                           {book.author || "Unknown Author"}
                         </Typography>
-                        {book.isbn && (
-                          <Typography
-                            variant="body2"
-                            color="text.secondary"
-                            className="isbn-tag"
-                            sx={{ mt: 1 }}
-                            noWrap
-                          >
-                            ISBN: {book.isbn}
-                          </Typography>
-                        )}
                       </CardContent>
                     </Card>
                   </Box>

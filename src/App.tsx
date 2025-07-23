@@ -19,7 +19,7 @@ const App: React.FC = () => {
     book: {
       title: string;
       author: string;
-      isbn: string;
+      isbn: string; // Keep as lowercase to match interface with NewBookForm
       coverURL?: string;
       publishedYear?: number;
       publishers?: string[];
@@ -36,27 +36,30 @@ const App: React.FC = () => {
       // Set the appropriate status based on destination
       const status = destination === "wishlist" ? "Wanted" : "Owned";
 
+      // Create request body with all fields
+      const requestBody = {
+        ISBN: book.isbn || "",
+        title: book.title,
+        author: book.author,
+        coverURL: book.coverURL,
+        status: status,
+        publishedYear: book.publishedYear,
+        publishers: book.publishers,
+        genres: book.genres,
+        subjects: book.subjects,
+        edition: book.edition,
+        description: book.description,
+        pageCount: book.pageCount,
+        language: book.language,
+      };
+
       // Add to Cosmos DB via API with the appropriate status
       const response = await fetch(`${API_URL}/v1/Books`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          isbn: book.isbn,
-          title: book.title,
-          author: book.author,
-          coverURL: book.coverURL,
-          status: status,
-          publishedYear: book.publishedYear,
-          publishers: book.publishers,
-          genres: book.genres,
-          subjects: book.subjects,
-          edition: book.edition,
-          description: book.description,
-          pageCount: book.pageCount,
-          language: book.language,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -66,7 +69,7 @@ const App: React.FC = () => {
       }
 
       const addedBook = await response.json();
-      console.log("Book added to collection:", addedBook);
+
       return addedBook;
     } catch (error) {
       console.error("Error adding book:", error);
