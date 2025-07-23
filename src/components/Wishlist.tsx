@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -23,11 +24,16 @@ interface Book {
 const API_URL = "http://localhost:5089";
 
 const Wishlist: React.FC = () => {
+  const navigate = useNavigate();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [updatingBook, setUpdatingBook] = useState<string | null>(null);
+
+  const handleViewDetails = (id: string) => {
+    navigate(`/bookshelf/${id}`);
+  };
 
   const handleMoveToBookshelf = async (book: Book) => {
     try {
@@ -154,7 +160,9 @@ const Wishlist: React.FC = () => {
                     "&:hover": {
                       transform: "scale(1.05)",
                     },
+                    cursor: "pointer",
                   }}
+                  onClick={() => handleViewDetails(book.id)}
                 >
                   <CardMedia
                     component="img"
@@ -186,7 +194,10 @@ const Wishlist: React.FC = () => {
                       size="small"
                       color="primary"
                       fullWidth
-                      onClick={() => handleMoveToBookshelf(book)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleMoveToBookshelf(book);
+                      }}
                       disabled={updatingBook === book.id}
                     >
                       {updatingBook === book.id

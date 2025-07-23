@@ -9,8 +9,14 @@ import {
   CircularProgress,
   Alert,
   Grid,
+  ButtonGroup,
+  Chip,
+  Snackbar,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CheckIcon from "@mui/icons-material/Check";
+import BookmarkIcon from "@mui/icons-material/Bookmark";
+import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
 
 // Define the Book interface to match with backend
 interface Book {
@@ -31,6 +37,9 @@ const BookDetail: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [loadingCover, setLoadingCover] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [showStatusControls, setShowStatusControls] = useState(false);
 
   useEffect(() => {
     const fetchBook = async () => {
@@ -93,6 +102,48 @@ const BookDetail: React.FC = () => {
 
   const handleBack = () => {
     navigate("/bookshelf");
+  };
+
+  const updateStatus = async (newStatus: string) => {
+    if (!book) return;
+
+    try {
+      setUpdatingStatus(true);
+
+      const updatedBook = { ...book, status: newStatus };
+
+      const response = await fetch(`${API_URL}/v1/Books/${book.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updatedBook),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to update status: ${response.status} ${response.statusText}`
+        );
+      }
+
+      setBook(updatedBook);
+      setStatusMessage(`Book status updated to ${newStatus}`);
+
+      // Hide the status controls after successful update
+      setShowStatusControls(false);
+
+      // If removing from collection, navigate back to bookshelf after a delay
+      if (newStatus === "Not In Collection") {
+        setTimeout(() => {
+          navigate("/bookshelf");
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Error updating book status:", err);
+      setError(err instanceof Error ? err.message : "Failed to update status");
+    } finally {
+      setUpdatingStatus(false);
+    }
   };
 
   if (loading) {
@@ -194,25 +245,118 @@ const BookDetail: React.FC = () => {
                   <strong>ISBN:</strong> {book.isbn}
                 </Typography>
                 {book.status && (
-                  <Typography
-                    variant="body1"
-                    sx={{
-                      py: 1,
-                      px: 2,
-                      mt: 2,
-                      bgcolor: "background.paper",
-                      borderLeft: "4px solid",
-                      borderColor: "primary.main",
-                    }}
-                  >
-                    <strong>Status:</strong> {book.status}
-                  </Typography>
+                  <Box sx={{ mt: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "space-between",
+                      }}
+                    >
+                      <Box sx={{ display: "flex", alignItems: "center" }}>
+                        <Typography variant="body1" fontWeight="medium">
+                          <strong>Status:</strong>
+                        </Typography>
+                        <Chip
+                          label={book.status}
+                          color={
+                            book.status === "Owned"
+                              ? "success"
+                              : book.status === "Wanted"
+                              ? "primary"
+                              : "default"
+                          }
+                          sx={{ ml: 1 }}
+                        />
+                      </Box>
+                      <Button
+                        size="small"
+                        onClick={() =>
+                          setShowStatusControls(!showStatusControls)
+                        }
+                        variant="outlined"
+                      >
+                        {showStatusControls ? "Hide Options" : "Change Status"}
+                      </Button>
+                    </Box>
+
+                    {showStatusControls && (
+                      <Box
+                        sx={{
+                          mt: 3,
+                          p: 2,
+                          bgcolor: "rgba(0,0,0,0.03)",
+                          borderRadius: 1,
+                        }}
+                      >
+                        <ButtonGroup
+                          variant="outlined"
+                          disabled={updatingStatus}
+                          fullWidth
+                        >
+                          <Button
+                            color="success"
+                            startIcon={<CheckIcon />}
+                            onClick={() => updateStatus("Owned")}
+                            variant={
+                              book.status === "Owned" ? "contained" : "outlined"
+                            }
+                          >
+                            Owned
+                          </Button>
+                          <Button
+                            color="primary"
+                            startIcon={<BookmarkIcon />}
+                            onClick={() => updateStatus("Wanted")}
+                            variant={
+                              book.status === "Wanted"
+                                ? "contained"
+                                : "outlined"
+                            }
+                          >
+                            Wanted
+                          </Button>
+                          <Button
+                            color="error"
+                            startIcon={<RemoveCircleIcon />}
+                            onClick={() => updateStatus("Not In Collection")}
+                            variant={
+                              book.status === "Not In Collection"
+                                ? "contained"
+                                : "outlined"
+                            }
+                          >
+                            Remove
+                          </Button>
+                        </ButtonGroup>
+                        {updatingStatus && (
+                          <Box
+                            sx={{
+                              display: "flex",
+                              justifyContent: "center",
+                              mt: 2,
+                            }}
+                          >
+                            <CircularProgress size={20} />
+                          </Box>
+                        )}
+                      </Box>
+                    )}
+                  </Box>
                 )}
               </Box>
             </Box>
           </Box>
         </Paper>
       </Box>
+
+      <Snackbar
+        open={statusMessage !== null}
+        autoHideDuration={5000}
+        onClose={() => setStatusMessage(null)}
+        message={statusMessage}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      />
     </Container>
   );
 };

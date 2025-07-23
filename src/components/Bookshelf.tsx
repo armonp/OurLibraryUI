@@ -48,7 +48,7 @@ const Bookshelf: React.FC = () => {
         }
 
         const data = await response.json();
-        // Filter to only show books with "Owned" status
+        // Filter to only show books with "Owned" status, excluding "Not In Collection"
         const ownedBooks = data.filter((book: Book) => book.status === "Owned");
         setBooks(ownedBooks);
         setError(null);
