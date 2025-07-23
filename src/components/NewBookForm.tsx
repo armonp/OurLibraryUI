@@ -19,10 +19,17 @@ import {
   IconButton,
   Tabs,
   Tab,
-  Grid,
+  Modal,
+  Chip,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
+import CloseIcon from "@mui/icons-material/Close";
+import CategoryIcon from "@mui/icons-material/Category";
+import MenuBookIcon from "@mui/icons-material/MenuBook";
+import BusinessIcon from "@mui/icons-material/Business";
+import LanguageIcon from "@mui/icons-material/Language";
+import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 
 interface NewBookFormProps {
   onAddBook: (
@@ -67,6 +74,8 @@ const API_URL = "http://localhost:5089";
 
 const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
   const navigate = useNavigate();
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
 
   // Tab state
   const [currentTab, setCurrentTab] = useState<number>(0);
@@ -136,10 +145,15 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     }
   };
 
-  // Navigate to book details page
+  // Show book details in modal
   const handleViewDetails = (book: Book) => {
-    // Navigate to the book details page with the book data
-    navigate("/book-detail", { state: { book } });
+    setSelectedBook(book);
+    setDetailModalOpen(true);
+  };
+
+  // Close the book detail modal
+  const handleCloseModal = () => {
+    setDetailModalOpen(false);
   };
 
   // Handle search form submission
@@ -512,6 +526,263 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
           </Box>
         )}
       </Paper>
+
+      {/* Book Detail Modal */}
+      <Modal
+        open={detailModalOpen}
+        onClose={handleCloseModal}
+        aria-labelledby="book-detail-modal"
+        aria-describedby="book-detail-modal-description"
+      >
+        <Box
+          sx={{
+            position: "absolute",
+            top: "50%",
+            left: "50%",
+            transform: "translate(-50%, -50%)",
+            width: { xs: "90%", sm: "80%", md: "70%" },
+            maxWidth: "900px",
+            maxHeight: "90vh",
+            overflow: "auto",
+            overflowY: "scroll",
+            bgcolor: "background.paper",
+            borderRadius: 2,
+            boxShadow: 24,
+            p: 4,
+          }}
+        >
+          {selectedBook && (
+            <>
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  mb: 3,
+                }}
+              >
+                <Typography
+                  variant="h4"
+                  component="h2"
+                  sx={{ fontWeight: "bold", mb: 1 }}
+                >
+                  {selectedBook.title}
+                </Typography>
+                <IconButton onClick={handleCloseModal} sx={{ p: 1 }}>
+                  <CloseIcon />
+                </IconButton>
+              </Box>
+
+              <Box
+                sx={{
+                  display: "flex",
+                  flexDirection: { xs: "column", sm: "row" },
+                  gap: 4,
+                }}
+              >
+                {/* Book Cover */}
+                <Box sx={{ width: { xs: "100%", sm: "30%", md: "25%" } }}>
+                  <Box
+                    sx={{
+                      width: "100%",
+                      display: "flex",
+                      justifyContent: "center",
+                      mb: { xs: 2, sm: 0 },
+                    }}
+                  >
+                    <img
+                      src={
+                        selectedBook.coverURL ||
+                        `https://via.placeholder.com/200x300?text=${encodeURIComponent(
+                          selectedBook.title
+                        )}`
+                      }
+                      alt={selectedBook.title}
+                      style={{
+                        maxWidth: "100%",
+                        maxHeight: "300px",
+                        objectFit: "contain",
+                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                        borderRadius: "4px",
+                      }}
+                    />
+                  </Box>
+
+                  {/* Action Buttons */}
+                  <Box
+                    sx={{
+                      mt: 3,
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 2,
+                    }}
+                  >
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      fullWidth
+                      startIcon={<AddCircleIcon />}
+                      onClick={() => {
+                        handleSelectBook(selectedBook, "bookshelf");
+                        handleCloseModal();
+                      }}
+                    >
+                      Add to Bookshelf
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      fullWidth
+                      onClick={() => {
+                        handleSelectBook(selectedBook, "wishlist");
+                        handleCloseModal();
+                      }}
+                    >
+                      Add to Wishlist
+                    </Button>
+                  </Box>
+                </Box>
+
+                {/* Book Details */}
+                <Box sx={{ width: { xs: "100%", sm: "70%", md: "75%" } }}>
+                  {/* Author */}
+                  <Typography variant="h6" sx={{ mb: 1 }}>
+                    {selectedBook.author || "Unknown Author"}
+                  </Typography>
+
+                  {/* Publication Info */}
+                  <Box sx={{ mb: 3 }}>
+                    {selectedBook.publishedYear && (
+                      <Typography variant="body1" color="text.secondary">
+                        Published: {selectedBook.publishedYear}
+                        {selectedBook.publishers &&
+                          selectedBook.publishers.length > 0 && (
+                            <> by {selectedBook.publishers.join(", ")}</>
+                          )}
+                      </Typography>
+                    )}
+
+                    {selectedBook.language && (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                      >
+                        <LanguageIcon
+                          fontSize="small"
+                          sx={{ mr: 1, color: "text.secondary" }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          Language: {selectedBook.language}
+                        </Typography>
+                      </Box>
+                    )}
+
+                    {selectedBook.pageCount && (
+                      <Box
+                        sx={{ display: "flex", alignItems: "center", mt: 1 }}
+                      >
+                        <MenuBookIcon
+                          fontSize="small"
+                          sx={{ mr: 1, color: "text.secondary" }}
+                        />
+                        <Typography variant="body2" color="text.secondary">
+                          Pages: {selectedBook.pageCount}
+                        </Typography>
+                      </Box>
+                    )}
+                  </Box>
+
+                  {/* Description */}
+                  {selectedBook.description && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="h6" gutterBottom>
+                        Description
+                      </Typography>
+                      <Typography
+                        variant="body1"
+                        sx={{ whiteSpace: "pre-wrap" }}
+                      >
+                        {selectedBook.description}
+                      </Typography>
+                    </Box>
+                  )}
+
+                  {/* Genres/Subjects */}
+                  {(selectedBook.genres || selectedBook.subjects) && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography
+                        variant="h6"
+                        gutterBottom
+                        sx={{ display: "flex", alignItems: "center" }}
+                      >
+                        <CategoryIcon sx={{ mr: 1 }} /> Categories
+                      </Typography>
+                      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                        {selectedBook.genres &&
+                          selectedBook.genres.map((genre, index) => (
+                            <Chip
+                              key={`genre-${index}`}
+                              label={genre}
+                              size="small"
+                              color="primary"
+                              variant="outlined"
+                            />
+                          ))}
+                        {selectedBook.subjects &&
+                          selectedBook.subjects
+                            .slice(0, 10)
+                            .map((subject, index) => (
+                              <Chip
+                                key={`subject-${index}`}
+                                label={subject}
+                                size="small"
+                              />
+                            ))}
+                      </Box>
+                    </Box>
+                  )}
+
+                  {/* Publishers */}
+                  {selectedBook.publishers &&
+                    selectedBook.publishers.length > 0 && (
+                      <Box sx={{ mb: 3 }}>
+                        <Typography
+                          variant="h6"
+                          gutterBottom
+                          sx={{ display: "flex", alignItems: "center" }}
+                        >
+                          <BusinessIcon sx={{ mr: 1 }} /> Publishers
+                        </Typography>
+                        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                          {selectedBook.publishers.map((publisher, index) => (
+                            <Chip
+                              key={`publisher-${index}`}
+                              label={publisher}
+                              size="small"
+                              variant="outlined"
+                            />
+                          ))}
+                        </Box>
+                      </Box>
+                    )}
+
+                  {/* Edition Information */}
+                  {selectedBook.edition && (
+                    <Box sx={{ mb: 3 }}>
+                      <Typography variant="body2" color="text.secondary">
+                        <LocalLibraryIcon
+                          fontSize="small"
+                          sx={{ mr: 1, verticalAlign: "middle" }}
+                        />
+                        Edition: {selectedBook.edition}
+                      </Typography>
+                    </Box>
+                  )}
+                </Box>
+              </Box>
+            </>
+          )}
+        </Box>
+      </Modal>
     </Container>
   );
 };
