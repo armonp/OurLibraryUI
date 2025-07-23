@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Container,
   Typography,
@@ -30,6 +31,14 @@ interface NewBookFormProps {
       author: string;
       isbn: string;
       coverURL?: string;
+      publishedYear?: number;
+      publishers?: string[];
+      genres?: string[];
+      subjects?: string[];
+      edition?: string;
+      description?: string;
+      pageCount?: number;
+      language?: string;
     },
     destination?: string
   ) => Promise<any>;
@@ -43,11 +52,21 @@ interface Book {
   author?: string;
   coverURL?: string;
   status?: string;
+  publishedYear?: number;
+  publishers?: string[];
+  genres?: string[];
+  subjects?: string[];
+  edition?: string;
+  description?: string;
+  pageCount?: number;
+  language?: string;
 }
 
 const API_URL = "http://localhost:5089";
 
 const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
+  const navigate = useNavigate();
+
   // Tab state
   const [currentTab, setCurrentTab] = useState<number>(0);
 
@@ -81,7 +100,24 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     e.preventDefault();
     if (title && author && isbn) {
       try {
-        const result = await onAddBook({ title, author, isbn }, destination);
+        const result = await onAddBook(
+          {
+            title,
+            author,
+            isbn,
+            // We don't have these fields in the manual form, but sending empty values
+            // to maintain consistency with the API expectations
+            publishedYear: undefined,
+            publishers: [],
+            genres: [],
+            subjects: [],
+            edition: undefined,
+            description: undefined,
+            pageCount: undefined,
+            language: undefined,
+          },
+          destination
+        );
         if (result) {
           const locationName =
             destination === "wishlist" ? "wishlist" : "collection";
@@ -99,10 +135,16 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     }
   };
 
-  // Handle search for books
-  const handleSearch = async () => {
-    if (!searchQuery.trim()) return;
+  // Navigate to book details page
+  const handleViewDetails = (book: Book) => {
+    // Navigate to the book details page with the book data
+    navigate("/book-detail", { state: { book } });
+  };
 
+  // Handle search form submission
+  const handleSearch = async (e?: React.FormEvent) => {
+    e?.preventDefault();
+    if (!searchQuery.trim()) return;
     setIsSearching(true);
     setSearchError(null);
 
@@ -144,6 +186,14 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
         author: book.author || "Unknown",
         isbn: book.isbn,
         coverURL: book.coverURL,
+        publishedYear: book.publishedYear,
+        publishers: book.publishers,
+        genres: book.genres,
+        subjects: book.subjects,
+        edition: book.edition,
+        description: book.description,
+        pageCount: book.pageCount,
+        language: book.language,
       },
       destination
     );
@@ -252,26 +302,39 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                 {searchResults.map((book) => (
                   <Box key={book.id} sx={{ width: "100%", overflow: "hidden" }}>
                     <Card
+                      className="search-result-card"
                       sx={{
                         display: "flex",
                         flexDirection: "column",
                         height: "100%",
                         position: "relative",
-                        pb: 2,
+                        pb: 3 /* Increased padding bottom */,
                         maxWidth: "100%",
                         overflow: "hidden",
+                        cursor: "pointer",
+                        transition:
+                          "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                        "&:hover": {
+                          transform: "translateY(-4px)",
+                          boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                        },
+                      }}
+                      onClick={(e) => {
+                        // Prevent click event when buttons are clicked
+                        if ((e.target as HTMLElement).closest("button")) return;
+                        handleViewDetails(book);
                       }}
                     >
                       <Box
                         sx={{
                           position: "absolute",
-                          right: 8,
+                          left: 8,
                           top: 8,
                           display: "flex",
                           flexDirection: "column",
                           gap: 1,
                           zIndex: 1,
-                          maxWidth: "calc(100% - 16px)",
+                          maxWidth: "calc(50% - 16px)",
                         }}
                       >
                         <Button
@@ -284,8 +347,14 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                             color: "white",
                             "&:hover": {
                               backgroundColor: "rgba(25, 118, 210, 1)",
+                              transform: "scale(1.05)",
                             },
                             whiteSpace: "nowrap",
+                            fontSize: "0.75rem",
+                            py: 0.5,
+                            px: 1,
+                            borderRadius: "12px",
+                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                           }}
                           startIcon={<AddCircleIcon />}
                         >
@@ -296,11 +365,10 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                       <Box
                         sx={{
                           position: "absolute",
-                          bottom: 8,
-                          left: 0,
-                          right: 0,
+                          top: 8, // Changed from bottom to top
+                          right: 8, // Aligned to right instead of center
                           display: "flex",
-                          justifyContent: "center",
+                          justifyContent: "flex-end",
                           zIndex: 1,
                         }}
                       >
@@ -313,9 +381,14 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                             backgroundColor: "rgba(255, 255, 255, 0.9)",
                             "&:hover": {
                               backgroundColor: "rgba(255, 255, 255, 1)",
+                              transform: "scale(1.05)",
                             },
                             whiteSpace: "nowrap",
-                            maxWidth: "90%",
+                            fontSize: "0.75rem",
+                            py: 0.5,
+                            px: 1,
+                            minWidth: "auto",
+                            borderRadius: "12px",
                           }}
                         >
                           Add to Wishlist
@@ -358,6 +431,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                           <Typography
                             variant="body2"
                             color="text.secondary"
+                            className="isbn-tag"
                             sx={{ mt: 1 }}
                             noWrap
                           >

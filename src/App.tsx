@@ -4,6 +4,7 @@ import { ThemeProvider, CssBaseline } from "@mui/material";
 import theme from "./theme";
 import Navbar from "./components/Navbar";
 import Bookshelf from "./components/Bookshelf";
+import "./styles/global.css";
 import BookDetail from "./components/BookDetail";
 import NewBookForm from "./components/NewBookForm";
 import Wishlist from "./components/Wishlist";
@@ -20,6 +21,14 @@ const App: React.FC = () => {
       author: string;
       isbn: string;
       coverURL?: string;
+      publishedYear?: number;
+      publishers?: string[];
+      genres?: string[];
+      subjects?: string[];
+      edition?: string;
+      description?: string;
+      pageCount?: number;
+      language?: string;
     },
     destination: string = "bookshelf"
   ) => {
@@ -39,6 +48,14 @@ const App: React.FC = () => {
           author: book.author,
           coverURL: book.coverURL,
           status: status,
+          publishedYear: book.publishedYear,
+          publishers: book.publishers,
+          genres: book.genres,
+          subjects: book.subjects,
+          edition: book.edition,
+          description: book.description,
+          pageCount: book.pageCount,
+          language: book.language,
         }),
       });
 
@@ -67,6 +84,7 @@ const App: React.FC = () => {
             <Route path="/" element={<Home />} />
             <Route path="/bookshelf" element={<Bookshelf />} />
             <Route path="/bookshelf/:id" element={<BookDetail />} />
+            <Route path="/book-detail" element={<BookDetail />} />
             <Route
               path="/new-book"
               element={<NewBookForm onAddBook={handleAddBook} />}

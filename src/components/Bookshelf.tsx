@@ -206,16 +206,6 @@ const Bookshelf: React.FC = () => {
                     <Typography variant="body2" color="text.secondary">
                       {book.author || "Unknown Author"}
                     </Typography>
-                    {book.status && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
-                        display="block"
-                        sx={{ mt: 1 }}
-                      >
-                        Status: {book.status}
-                      </Typography>
-                    )}
                     {!book.coverURL && book.isbn && (
                       <button
                         onClick={(e) => {

@@ -1,0 +1,190 @@
+/* Global CSS for the React Library App */
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;500;600;700&display=swap');
+
+body {
+  background-color: #f9f7f2;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cg fill-rule='evenodd'%3E%3Cg fill='%23e5e1d8' fill-opacity='0.4'%3E%3Cpath opacity='.5' d='M96 95h4v1h-4v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4h-9v4h-1v-4H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15v-9H0v-1h15V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h9V0h1v15h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9h4v1h-4v9zm-1 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm9-10v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-10 0v-9h-9v9h9zm-9-10h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9zm10 0h9v-9h-9v9z'/%3E%3Cpath d='M6 5V0H5v5H0v1h5v94h1V6h94V5H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+}
+
+/* Add some depth to cards and elements */
+.MuiCard-root, .MuiPaper-root {
+  position: relative;
+}
+
+/* Add a book-like texture to elements */
+.MuiCard-root::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='4' height='4' viewBox='0 0 4 4'%3E%3Cpath fill='%23a89f9f' fill-opacity='0.05' d='M1 3h1v1H1V3zm2-2h1v1H3V1z'%3E%3C/path%3E%3C/svg%3E");
+  opacity: 0.5;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Fun animations for children's app */
+@keyframes float {
+  0% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.float-animation {
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+@keyframes sparkle {
+  0% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.2); opacity: 1; }
+  100% { transform: scale(1); opacity: 0.5; }
+}
+
+.sparkle {
+  animation: sparkle 2s infinite;
+}
+
+/* Book cover hover effect */
+img:hover {
+  transform: scale(1.05);
+  transition: transform 0.3s ease;
+  box-shadow: 0 8px 30px rgba(0,0,0,0.15);
+}
+
+/* Custom scrollbar for a more playful look */
+::-webkit-scrollbar {
+  width: 12px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f9f7f2;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(45deg, #56ab2f, #45a247);
+  border-radius: 10px;
+  border: 3px solid #f9f7f2;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(45deg, #45a247, #388e3c);
+}
+
+/* Notes section styling */
+.notes-container {
+  position: relative;
+  border-radius: 12px;
+  padding: 1.5rem;
+  background-color: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+  border: 1px dashed #bbb;
+  overflow: hidden;
+}
+
+.notes-container::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #FFB7B2, #FFDAC1, #E2F0CB, #B5EAD7);
+}
+
+/* Search results styling */
+.MuiCard-root.search-result-card {
+  position: relative;
+  overflow: visible !important;
+  margin-bottom: 8px;
+  padding-bottom: 40px; /* Extra space for ISBN */
+}
+
+.isbn-tag {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  margin-top: 8px;
+  background-color: rgba(245, 245, 245, 0.9);
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid rgba(0,0,0,0.1);
+  font-size: 0.75rem;
+}
+
+/* Book details styling */
+.book-detail-section {
+  margin-top: 24px;
+  padding: 16px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.7);
+  border: 1px dashed rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+}
+
+.book-detail-section h4 {
+  margin-bottom: 12px;
+  font-weight: 600;
+  color: #6573c3;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.book-detail-section::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #6573c3, #8596e0, #a4b7ff);
+  opacity: 0.7;
+}
+
+.book-info-tag {
+  display: inline-block;
+  margin: 0 4px 8px 0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.85rem;
+  background-color: rgba(159, 168, 218, 0.2);
+  color: #4a5568;
+  border: 1px solid rgba(101, 115, 195, 0.3);
+  transition: all 0.2s ease;
+}
+
+.book-info-tag:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.book-description {
+  padding: 16px;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 8px;
+  margin-top: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+  position: relative;
+  font-size: 0.9rem;
+  line-height: 1.6;
+  box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.05);
+}
