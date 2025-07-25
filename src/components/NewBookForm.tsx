@@ -21,6 +21,7 @@ import {
   Tab,
   Modal,
   Chip,
+  Pagination,
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
@@ -76,6 +77,8 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
   const navigate = useNavigate();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState<boolean>(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const resultsPerPage = 9;
 
   // Tab state
   const [currentTab, setCurrentTab] = useState<number>(0);
@@ -177,6 +180,8 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
       const data = await response.json();
 
       // Process search results
+      // Reset to first page when performing a new search
+      setCurrentPage(1);
 
       setSearchResults(data);
 
@@ -306,152 +311,209 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
             )}
 
             {searchResults.length > 0 && (
-              <Box
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: {
-                    xs: "minmax(0, 1fr)",
-                    sm: "repeat(2, minmax(0, 1fr))",
-                    md: "repeat(3, minmax(0, 1fr))",
-                  },
-                  gap: 2,
-                  width: "100%",
-                  overflow: "hidden",
-                }}
-              >
-                {searchResults.map((book) => (
-                  <Box key={book.id} sx={{ width: "100%", overflow: "hidden" }}>
-                    <Card
-                      className="search-result-card"
-                      sx={{
-                        display: "flex",
-                        flexDirection: "column",
-                        height: "100%",
-                        position: "relative",
-                        pb: 3 /* Increased padding bottom */,
-                        maxWidth: "100%",
-                        overflow: "hidden",
-                        cursor: "pointer",
-                        transition:
-                          "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
-                        "&:hover": {
-                          transform: "translateY(-4px)",
-                          boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
-                        },
-                      }}
-                      onClick={(e) => {
-                        // Prevent click event when buttons are clicked
-                        if ((e.target as HTMLElement).closest("button")) return;
-                        handleViewDetails(book);
-                      }}
-                    >
+              <>
+                {/* Calculate pagination for search results */}
+                {(() => {
+                  const indexOfLastResult = currentPage * resultsPerPage;
+                  const indexOfFirstResult = indexOfLastResult - resultsPerPage;
+                  const currentResults = searchResults.slice(
+                    indexOfFirstResult,
+                    indexOfLastResult
+                  );
+                  const totalPages = Math.ceil(
+                    searchResults.length / resultsPerPage
+                  );
+
+                  // Handle page change
+                  const handlePageChange = (
+                    event: React.ChangeEvent<unknown>,
+                    value: number
+                  ) => {
+                    setCurrentPage(value);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  };
+
+                  return (
+                    <>
                       <Box
                         sx={{
-                          position: "absolute",
-                          left: 8,
-                          top: 8,
-                          display: "flex",
-                          flexDirection: "column",
-                          gap: 1,
-                          zIndex: 1,
-                          maxWidth: "calc(50% - 16px)",
+                          display: "grid",
+                          gridTemplateColumns: {
+                            xs: "minmax(0, 1fr)",
+                            sm: "repeat(2, minmax(0, 1fr))",
+                            md: "repeat(3, minmax(0, 1fr))",
+                          },
+                          gap: 2,
+                          width: "100%",
+                          overflow: "hidden",
                         }}
                       >
-                        <Button
-                          variant="contained"
-                          size="small"
-                          color="primary"
-                          onClick={() => handleSelectBook(book, "bookshelf")}
-                          sx={{
-                            backgroundColor: "rgba(25, 118, 210, 0.9)",
-                            color: "white",
-                            "&:hover": {
-                              backgroundColor: "rgba(25, 118, 210, 1)",
-                              transform: "scale(1.05)",
-                            },
-                            whiteSpace: "nowrap",
-                            fontSize: "0.75rem",
-                            py: 0.5,
-                            px: 1,
-                            borderRadius: "12px",
-                            boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
-                          }}
-                          startIcon={<AddCircleIcon />}
-                        >
-                          Add to Shelf
-                        </Button>
+                        {currentResults.map((book) => (
+                          <Box
+                            key={book.id}
+                            sx={{ width: "100%", overflow: "hidden" }}
+                          >
+                            <Card
+                              className="search-result-card"
+                              sx={{
+                                display: "flex",
+                                flexDirection: "column",
+                                height: "100%",
+                                position: "relative",
+                                pb: 3 /* Increased padding bottom */,
+                                maxWidth: "100%",
+                                overflow: "hidden",
+                                cursor: "pointer",
+                                transition:
+                                  "transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out",
+                                "&:hover": {
+                                  transform: "translateY(-4px)",
+                                  boxShadow: "0 8px 16px rgba(0,0,0,0.1)",
+                                },
+                              }}
+                              onClick={(e) => {
+                                // Prevent click event when buttons are clicked
+                                if ((e.target as HTMLElement).closest("button"))
+                                  return;
+                                handleViewDetails(book);
+                              }}
+                            >
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  left: 8,
+                                  top: 8,
+                                  display: "flex",
+                                  flexDirection: "column",
+                                  gap: 1,
+                                  zIndex: 1,
+                                  maxWidth: "calc(50% - 16px)",
+                                }}
+                              >
+                                <Button
+                                  variant="contained"
+                                  size="small"
+                                  color="primary"
+                                  onClick={() =>
+                                    handleSelectBook(book, "bookshelf")
+                                  }
+                                  sx={{
+                                    backgroundColor: "rgba(25, 118, 210, 0.9)",
+                                    color: "white",
+                                    "&:hover": {
+                                      backgroundColor: "rgba(25, 118, 210, 1)",
+                                      transform: "scale(1.05)",
+                                    },
+                                    whiteSpace: "nowrap",
+                                    fontSize: "0.75rem",
+                                    py: 0.5,
+                                    px: 1,
+                                    borderRadius: "12px",
+                                    boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+                                  }}
+                                  startIcon={<AddCircleIcon />}
+                                >
+                                  Add to Shelf
+                                </Button>
+                              </Box>
+
+                              <Box
+                                sx={{
+                                  position: "absolute",
+                                  top: 8, // Changed from bottom to top
+                                  right: 8, // Aligned to right instead of center
+                                  display: "flex",
+                                  justifyContent: "flex-end",
+                                  zIndex: 1,
+                                }}
+                              >
+                                <Button
+                                  variant="outlined"
+                                  size="small"
+                                  color="secondary"
+                                  onClick={() =>
+                                    handleSelectBook(book, "wishlist")
+                                  }
+                                  sx={{
+                                    backgroundColor: "rgba(255, 255, 255, 0.9)",
+                                    "&:hover": {
+                                      backgroundColor: "rgba(255, 255, 255, 1)",
+                                      transform: "scale(1.05)",
+                                    },
+                                    whiteSpace: "nowrap",
+                                    fontSize: "0.75rem",
+                                    py: 0.5,
+                                    px: 1,
+                                    minWidth: "auto",
+                                    borderRadius: "12px",
+                                  }}
+                                >
+                                  Add to Wishlist
+                                </Button>
+                              </Box>
+                              <CardMedia
+                                component="img"
+                                sx={{
+                                  height: 200,
+                                  objectFit: "contain",
+                                  backgroundColor: "#f5f5f5",
+                                }}
+                                image={
+                                  book.coverURL ||
+                                  `https://via.placeholder.com/200x300?text=${encodeURIComponent(
+                                    book.title
+                                  )}`
+                                }
+                                alt={book.title}
+                              />
+                              <CardContent sx={{ overflow: "hidden" }}>
+                                <Typography
+                                  gutterBottom
+                                  variant="h6"
+                                  component="div"
+                                  noWrap
+                                  sx={{ textOverflow: "ellipsis" }}
+                                >
+                                  {book.title}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  color="text.secondary"
+                                  noWrap
+                                  sx={{ textOverflow: "ellipsis" }}
+                                >
+                                  {book.author || "Unknown Author"}
+                                </Typography>
+                              </CardContent>
+                            </Card>
+                          </Box>
+                        ))}
                       </Box>
 
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          top: 8, // Changed from bottom to top
-                          right: 8, // Aligned to right instead of center
-                          display: "flex",
-                          justifyContent: "flex-end",
-                          zIndex: 1,
-                        }}
-                      >
-                        <Button
-                          variant="outlined"
-                          size="small"
-                          color="secondary"
-                          onClick={() => handleSelectBook(book, "wishlist")}
+                      {/* Pagination for search results */}
+                      {totalPages > 1 && (
+                        <Box
                           sx={{
-                            backgroundColor: "rgba(255, 255, 255, 0.9)",
-                            "&:hover": {
-                              backgroundColor: "rgba(255, 255, 255, 1)",
-                              transform: "scale(1.05)",
-                            },
-                            whiteSpace: "nowrap",
-                            fontSize: "0.75rem",
-                            py: 0.5,
-                            px: 1,
-                            minWidth: "auto",
-                            borderRadius: "12px",
+                            display: "flex",
+                            justifyContent: "center",
+                            mt: 4,
                           }}
                         >
-                          Add to Wishlist
-                        </Button>
-                      </Box>
-                      <CardMedia
-                        component="img"
-                        sx={{
-                          height: 200,
-                          objectFit: "contain",
-                          backgroundColor: "#f5f5f5",
-                        }}
-                        image={
-                          book.coverURL ||
-                          `https://via.placeholder.com/200x300?text=${encodeURIComponent(
-                            book.title
-                          )}`
-                        }
-                        alt={book.title}
-                      />
-                      <CardContent sx={{ overflow: "hidden" }}>
-                        <Typography
-                          gutterBottom
-                          variant="h6"
-                          component="div"
-                          noWrap
-                          sx={{ textOverflow: "ellipsis" }}
-                        >
-                          {book.title}
-                        </Typography>
-                        <Typography
-                          variant="body2"
-                          color="text.secondary"
-                          noWrap
-                          sx={{ textOverflow: "ellipsis" }}
-                        >
-                          {book.author || "Unknown Author"}
-                        </Typography>
-                      </CardContent>
-                    </Card>
-                  </Box>
-                ))}
-              </Box>
+                          <Pagination
+                            count={totalPages}
+                            page={currentPage}
+                            onChange={handlePageChange}
+                            color="primary"
+                            size="large"
+                            showFirstButton
+                            showLastButton
+                          />
+                        </Box>
+                      )}
+                    </>
+                  );
+                })()}
+              </>
             )}
           </Box>
         )}
