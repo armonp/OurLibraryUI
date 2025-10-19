@@ -7,6 +7,7 @@ Welcome to the React Library App! This application allows users to manage a coll
 - **Bookshelf**: Displays all books in the collection with their cover images, titles, and authors. Now with pagination for easier browsing of large collections.
 - **Book Search**: Search for books through the OpenLibrary API and view detailed information in a modal window.
 - **Book Details**: View comprehensive book information including cover, description, genres, and publishers.
+- **Edit Book Details**: Edit book information for books in your collection, including title, author, ISBN, description, and more.
 - **Enter New Book**: A form to add new books to the collection by entering the title, author, and ISBN.
 - **Wishlist**: Similar to the bookshelf, but displays books that are not currently in the collection.
 - **Home Page**: A welcoming page with a title and a centered image.

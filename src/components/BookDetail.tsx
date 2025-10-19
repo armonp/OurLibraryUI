@@ -14,6 +14,7 @@ import {
   Snackbar,
   TextField,
   Divider,
+  IconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
@@ -24,6 +25,8 @@ import CategoryIcon from "@mui/icons-material/Category";
 import DescriptionIcon from "@mui/icons-material/Description";
 import BusinessIcon from "@mui/icons-material/Business";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
+import EditIcon from "@mui/icons-material/Edit";
+import EditBookForm from "./EditBookForm";
 
 // Define the Book interface to match with backend
 interface Book {
@@ -64,6 +67,9 @@ const BookDetail: React.FC = () => {
   const [addingToCollection, setAddingToCollection] = useState(false);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+
+  // Edit mode state
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useEffect(() => {
     // If book is already set from location state, use that
@@ -278,6 +284,33 @@ const BookDetail: React.FC = () => {
     }
   };
 
+  // Toggle edit mode
+  const handleEnterEditMode = () => {
+    if (!book) return;
+    setIsEditMode(true);
+  };
+
+  // Handle cancel edit
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+  };
+
+  // Handle save from EditBookForm
+  const handleSaveEdit = async (updatedBook: Book) => {
+    if (!book) return;
+
+    try {
+      // The EditBookForm already saves the data to the API
+      // Just update the local state and exit edit mode
+      setBook(updatedBook);
+      setIsEditMode(false);
+      setStatusMessage("Book details updated successfully!");
+    } catch (err) {
+      console.error("Error updating book:", err);
+      setError(err instanceof Error ? err.message : "Failed to update book");
+    }
+  };
+
   if (loading) {
     return (
       <Container maxWidth="md">
@@ -327,27 +360,52 @@ const BookDetail: React.FC = () => {
       </Snackbar>
 
       <Box sx={{ my: 4 }}>
-        <Button
-          startIcon={<span style={{ fontSize: "1.2rem" }}>🏠</span>}
-          onClick={handleBack}
-          variant="contained"
-          color="secondary"
-          sx={{
-            mb: 2,
-            borderRadius: "20px",
-            boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-            transition: "all 0.3s ease",
-            fontWeight: "bold",
-            px: 3,
-            py: 1,
-            "&:hover": {
-              transform: "translateY(-3px) scale(1.02)",
-              boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
-            },
-          }}
-        >
-          Back to Magic Bookshelf
-        </Button>
+        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+          <Button
+            startIcon={<span style={{ fontSize: "1.2rem" }}>🏠</span>}
+            onClick={handleBack}
+            variant="contained"
+            color="secondary"
+            sx={{
+              borderRadius: "20px",
+              boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
+              transition: "all 0.3s ease",
+              fontWeight: "bold",
+              px: 3,
+              py: 1,
+              "&:hover": {
+                transform: "translateY(-3px) scale(1.02)",
+                boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
+              },
+            }}
+          >
+            Back to Magic Bookshelf
+          </Button>
+
+          {/* Edit Button - Only show if book is in collection and not in edit mode */}
+          {book.id && book.status !== "Not In Collection" && !isEditMode && (
+            <Button
+              onClick={handleEnterEditMode}
+              variant="outlined"
+              color="secondary"
+              startIcon={<EditIcon />}
+              sx={{
+                borderRadius: "20px",
+                fontWeight: "bold",
+                transition: "all 0.3s",
+                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
+                px: 3,
+                py: 1,
+                "&:hover": {
+                  transform: "scale(1.02)",
+                  boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
+                },
+              }}
+            >
+              Edit Book Details
+            </Button>
+          )}
+        </Box>
         <Paper
           elevation={3}
           sx={{
@@ -413,43 +471,50 @@ const BookDetail: React.FC = () => {
             {/* Right column - Book details */}
             <Box sx={{ flex: "1" }}>
               <Box sx={{ position: "relative" }}>
-                <Typography
-                  variant="h4"
-                  component="h1"
-                  gutterBottom
-                  sx={{
-                    fontWeight: 700,
-                    background:
-                      "linear-gradient(45deg, #ff9b54, #ff7754, #e65c9c, #8d67af)",
-                    WebkitBackgroundClip: "text",
-                    WebkitTextFillColor: "transparent",
-                    textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                    letterSpacing: "-0.5px",
-                    display: "inline-block",
-                    position: "relative",
-                    "&::after": {
-                      content: '""',
-                      position: "absolute",
-                      bottom: "0px",
-                      left: "0",
-                      width: "100%",
-                      height: "4px",
+                {isEditMode ? (
+                  <EditBookForm
+                    book={book}
+                    onSave={handleSaveEdit}
+                    onCancel={handleCancelEdit}
+                  />
+                ) : (
+                  <Typography
+                    variant="h4"
+                    component="h1"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 700,
                       background:
-                        "linear-gradient(90deg, #FF9AA2, #FFB7B2, #FFDAC1, #E2F0CB, #B5EAD7)",
-                      borderRadius: "2px",
-                    },
-                  }}
-                >
-                  {book.title}{" "}
-                  <span
-                    className="wiggle"
-                    style={{ fontSize: "1rem", display: "inline-block" }}
+                        "linear-gradient(45deg, #ff9b54, #ff7754, #e65c9c, #8d67af)",
+                      WebkitBackgroundClip: "text",
+                      WebkitTextFillColor: "transparent",
+                      textShadow: "0 2px 4px rgba(0,0,0,0.1)",
+                      letterSpacing: "-0.5px",
+                      display: "inline-block",
+                      position: "relative",
+                      "&::after": {
+                        content: '""',
+                        position: "absolute",
+                        bottom: "0px",
+                        left: 0,
+                        width: "100%",
+                        height: "4px",
+                        background:
+                          "linear-gradient(90deg, #FF9AA2, #FFB7B2, #FFDAC1, #E2F0CB, #B5EAD7)",
+                        borderRadius: "2px",
+                      },
+                    }}
                   >
-                    📖
-                  </span>
-                </Typography>
+                    {book.title}{" "}
+                    <span
+                      className="wiggle"
+                      style={{ fontSize: "1rem", display: "inline-block" }}
+                    >
+                      📖
+                    </span>
+                  </Typography>
+                )}
 
-                {/* Add Success/Error Messages */}
                 {addSuccess && (
                   <Alert
                     severity="success"
@@ -475,7 +540,6 @@ const BookDetail: React.FC = () => {
                   </Alert>
                 )}
 
-                {/* Only show add buttons if book is from search results (no ID) or not in collection */}
                 {(!book.id ||
                   !book.status ||
                   book.status === "Not In Collection") && (
@@ -532,569 +596,24 @@ const BookDetail: React.FC = () => {
                   <span style={{ fontSize: "1.8rem" }}>✨</span>
                 </Box>
               </Box>
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                gutterBottom
-                sx={{
-                  fontWeight: 600,
-                  color: "#007bff",
-                  textShadow: "0 1px 1px rgba(0,0,0,0.05)",
-                }}
-              >
-                {book.author || "Unknown Author"}
-              </Typography>
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="body1" gutterBottom>
-                  <strong>ISBN:</strong> {book.ISBN || book.isbn}
-                </Typography>
-                {book.publishedYear && (
-                  <Typography variant="body1" gutterBottom>
-                    <strong>Published:</strong> {book.publishedYear}
-                  </Typography>
-                )}
 
-                {/* Additional Book Details */}
-                <Box className="book-detail-section fade-in">
-                  <Typography variant="h6" component="h4">
-                    <MenuBookIcon fontSize="small" sx={{ mr: 1 }} />
-                    Book Details
-                  </Typography>
-
-                  {/* Publishers */}
-                  {book.publishers && book.publishers.length > 0 && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <BusinessIcon
-                          fontSize="small"
-                          sx={{ mr: 1, opacity: 0.7 }}
-                        />
-                        Publishers:
-                      </Typography>
-                      <Box>
-                        {book.publishers.map((publisher, index) => (
-                          <span key={index} className="book-info-tag">
-                            {publisher}
-                          </span>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  {/* Genres/Subjects */}
-                  {((book.genres && book.genres.length > 0) ||
-                    (book.subjects && book.subjects.length > 0)) && (
-                    <Box sx={{ mb: 2 }}>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <CategoryIcon
-                          fontSize="small"
-                          sx={{ mr: 1, opacity: 0.7 }}
-                        />
-                        Genres & Subjects:
-                      </Typography>
-                      <Box>
-                        {book.genres?.map((genre, index) => (
-                          <span
-                            key={`genre-${index}`}
-                            className="book-info-tag"
-                          >
-                            {genre}
-                          </span>
-                        ))}
-                        {book.subjects?.map((subject, index) => (
-                          <span
-                            key={`subject-${index}`}
-                            className="book-info-tag"
-                          >
-                            {subject}
-                          </span>
-                        ))}
-                      </Box>
-                    </Box>
-                  )}
-
-                  {/* Edition & Page Count */}
-                  <Box
-                    sx={{ mb: 2, display: "flex", flexWrap: "wrap", gap: 3 }}
+              {/* Show book details only when not in edit mode */}
+              {!isEditMode && (
+                <Box>
+                  <Typography
+                    variant="h6"
+                    color="text.secondary"
+                    gutterBottom
+                    sx={{
+                      fontWeight: 600,
+                      color: "#007bff",
+                      textShadow: "0 1px 1px rgba(0,0,0,0.05)",
+                    }}
                   >
-                    {book.edition && (
-                      <Box>
-                        <Typography
-                          variant="subtitle2"
-                          color="text.secondary"
-                          sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                        >
-                          <LocalLibraryIcon
-                            fontSize="small"
-                            sx={{ mr: 1, opacity: 0.7 }}
-                          />
-                          Edition:
-                        </Typography>
-                        <Typography variant="body2">{book.edition}</Typography>
-                      </Box>
-                    )}
-
-                    {book.pageCount && (
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Pages:
-                        </Typography>
-                        <Typography variant="body2">
-                          {book.pageCount}
-                        </Typography>
-                      </Box>
-                    )}
-
-                    {book.language && (
-                      <Box>
-                        <Typography variant="subtitle2" color="text.secondary">
-                          Language:
-                        </Typography>
-                        <Typography variant="body2">{book.language}</Typography>
-                      </Box>
-                    )}
-                  </Box>
-
-                  {/* Description */}
-                  {book.description && (
-                    <Box sx={{ mb: 1 }}>
-                      <Typography
-                        variant="subtitle2"
-                        color="text.secondary"
-                        sx={{ display: "flex", alignItems: "center", mb: 1 }}
-                      >
-                        <DescriptionIcon
-                          fontSize="small"
-                          sx={{ mr: 1, opacity: 0.7 }}
-                        />
-                        Description:
-                      </Typography>
-                      <div className="book-description">
-                        <Typography variant="body2">
-                          {book.description}
-                        </Typography>
-                      </div>
-                    </Box>
-                  )}
+                    {book.author || "Unknown Author"}
+                  </Typography>
                 </Box>
-
-                {book.status && (
-                  <Box sx={{ mt: 2 }}>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <Box sx={{ display: "flex", alignItems: "center" }}>
-                        <Typography variant="body1" fontWeight="medium">
-                          <strong>Status:</strong>
-                        </Typography>
-                        <Chip
-                          label={book.status}
-                          color={
-                            book.status === "Owned"
-                              ? "success"
-                              : book.status === "Wanted"
-                              ? "primary"
-                              : "default"
-                          }
-                          sx={{
-                            ml: 1,
-                            py: 2.5,
-                            px: 1,
-                            fontWeight: "bold",
-                            border: "2px solid",
-                            borderColor:
-                              book.status === "Owned"
-                                ? "success.main"
-                                : book.status === "Wanted"
-                                ? "primary.main"
-                                : "grey.300",
-                            boxShadow: "0 4px 8px rgba(0,0,0,0.1)",
-                          }}
-                        />
-                      </Box>
-                      <Button
-                        size="small"
-                        onClick={() =>
-                          setShowStatusControls(!showStatusControls)
-                        }
-                        variant="contained"
-                        color="secondary"
-                        sx={{
-                          borderRadius: "20px",
-                          boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                          transition: "transform 0.2s ease-in-out",
-                          "&:hover": {
-                            transform: "scale(1.05)",
-                            boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
-                          },
-                          fontWeight: "bold",
-                          px: 2,
-                        }}
-                        startIcon={
-                          showStatusControls ? (
-                            <span style={{ animation: "spin 1s ease-in-out" }}>
-                              📚
-                            </span>
-                          ) : (
-                            <span
-                              style={{
-                                animation: "bounce 0.5s infinite alternate",
-                              }}
-                            >
-                              📖
-                            </span>
-                          )
-                        }
-                      >
-                        {showStatusControls
-                          ? "Hide Magic Options ✨"
-                          : "Change Book Status 📚"}
-                      </Button>
-                    </Box>
-
-                    {showStatusControls && (
-                      <Box
-                        sx={{
-                          mt: 3,
-                          p: 3,
-                          bgcolor: "rgba(255,255,255,0.9)",
-                          borderRadius: "16px",
-                          boxShadow: "0 4px 20px rgba(0,0,0,0.1)",
-                          border: "2px dashed #6573c3",
-                          position: "relative",
-                          overflow: "hidden",
-                          "&::before": {
-                            content: '""',
-                            position: "absolute",
-                            top: 0,
-                            left: 0,
-                            right: 0,
-                            height: "5px",
-                            background:
-                              "linear-gradient(90deg, #FF9AA2, #FFB7B2, #FFDAC1, #E2F0CB, #B5EAD7, #C7CEEA)",
-                            borderTopLeftRadius: "16px",
-                            borderTopRightRadius: "16px",
-                          },
-                        }}
-                      >
-                        <Box
-                          sx={{
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 1.5,
-                          }}
-                        >
-                          <Typography
-                            variant="body2"
-                            sx={{
-                              mb: 1,
-                              fontWeight: "bold",
-                              color: "text.secondary",
-                            }}
-                          >
-                            Choose your book's magic status! ✨
-                          </Typography>
-                          <Button
-                            color="success"
-                            startIcon={
-                              <span style={{ fontSize: "1.2rem" }}>📚</span>
-                            }
-                            onClick={() => updateStatus("Owned")}
-                            disabled={updatingStatus}
-                            variant={
-                              book.status === "Owned" ? "contained" : "outlined"
-                            }
-                            sx={{
-                              borderRadius: "12px",
-                              py: 1,
-                              fontWeight: "bold",
-                              transition: "all 0.3s",
-                              boxShadow: book.status === "Owned" ? 3 : 0,
-                              "&:hover": {
-                                transform: "translateY(-3px)",
-                                boxShadow: 4,
-                              },
-                            }}
-                          >
-                            It's On My Bookshelf!
-                          </Button>
-                          <Button
-                            color="primary"
-                            startIcon={
-                              <span style={{ fontSize: "1.2rem" }}>💫</span>
-                            }
-                            onClick={() => updateStatus("Wanted")}
-                            disabled={updatingStatus}
-                            variant={
-                              book.status === "Wanted"
-                                ? "contained"
-                                : "outlined"
-                            }
-                            sx={{
-                              borderRadius: "12px",
-                              py: 1,
-                              fontWeight: "bold",
-                              transition: "all 0.3s",
-                              boxShadow: book.status === "Wanted" ? 3 : 0,
-                              "&:hover": {
-                                transform: "translateY(-3px)",
-                                boxShadow: 4,
-                              },
-                            }}
-                          >
-                            I Wish I Had This Book!
-                          </Button>
-                          <Button
-                            color="error"
-                            startIcon={
-                              <span style={{ fontSize: "1.2rem" }}>🔄</span>
-                            }
-                            onClick={() => updateStatus("Not In Collection")}
-                            disabled={updatingStatus}
-                            variant={
-                              book.status === "Not In Collection"
-                                ? "contained"
-                                : "outlined"
-                            }
-                            sx={{
-                              borderRadius: "12px",
-                              py: 1,
-                              fontWeight: "bold",
-                              transition: "all 0.3s",
-                              boxShadow:
-                                book.status === "Not In Collection" ? 3 : 0,
-                              "&:hover": {
-                                transform: "translateY(-3px)",
-                                boxShadow: 4,
-                              },
-                            }}
-                          >
-                            Not In My Collection
-                          </Button>
-                        </Box>
-                        {updatingStatus && (
-                          <Box
-                            sx={{
-                              display: "flex",
-                              flexDirection: "column",
-                              alignItems: "center",
-                              justifyContent: "center",
-                              mt: 2,
-                              p: 1,
-                              bgcolor: "rgba(255,255,255,0.8)",
-                              borderRadius: 2,
-                            }}
-                          >
-                            <Box
-                              sx={{
-                                display: "flex",
-                                alignItems: "center",
-                                mb: 1,
-                              }}
-                            >
-                              <span
-                                className="spin"
-                                style={{
-                                  fontSize: "1.5rem",
-                                  marginRight: "8px",
-                                }}
-                              >
-                                📚
-                              </span>
-                              <span
-                                className="bounce"
-                                style={{
-                                  fontSize: "1.5rem",
-                                  marginRight: "8px",
-                                }}
-                              >
-                                ✨
-                              </span>
-                              <span
-                                className="wiggle"
-                                style={{ fontSize: "1.5rem" }}
-                              >
-                                🪄
-                              </span>
-                            </Box>
-                            <Typography
-                              variant="body2"
-                              sx={{ fontWeight: "bold", color: "primary.main" }}
-                            >
-                              Magic in progress...
-                            </Typography>
-                          </Box>
-                        )}
-                      </Box>
-                    )}
-
-                    {/* Notes Section */}
-                    <Box sx={{ mt: 4, mb: 2 }}>
-                      <Divider sx={{ mb: 3, borderColor: "rgba(0,0,0,0.1)" }} />
-                      <Box
-                        sx={{
-                          display: "flex",
-                          justifyContent: "space-between",
-                          alignItems: "center",
-                          mb: 2,
-                        }}
-                      >
-                        <Typography
-                          variant="h6"
-                          sx={{
-                            fontWeight: 600,
-                            color: "#6573c3",
-                            display: "flex",
-                            alignItems: "center",
-                          }}
-                        >
-                          <span
-                            style={{ marginRight: "8px", fontSize: "1.2rem" }}
-                          >
-                            📝
-                          </span>
-                          My Notes
-                        </Typography>
-                        {!isEditingNotes ? (
-                          <Button
-                            variant="outlined"
-                            color="secondary"
-                            size="small"
-                            onClick={() => setIsEditingNotes(true)}
-                            sx={{
-                              borderRadius: "12px",
-                              fontWeight: "bold",
-                              "&:hover": { transform: "scale(1.05)" },
-                            }}
-                          >
-                            {notes ? "Edit Notes" : "Add Notes"}
-                          </Button>
-                        ) : (
-                          <Box sx={{ display: "flex", gap: 1 }}>
-                            <Button
-                              variant="outlined"
-                              color="error"
-                              size="small"
-                              onClick={() => {
-                                setIsEditingNotes(false);
-                                setNotes(book?.notes || "");
-                              }}
-                              disabled={savingNotes}
-                              sx={{
-                                borderRadius: "12px",
-                                fontWeight: "bold",
-                              }}
-                            >
-                              Cancel
-                            </Button>
-                            <Button
-                              variant="contained"
-                              color="success"
-                              size="small"
-                              onClick={saveNotes}
-                              disabled={savingNotes}
-                              sx={{
-                                borderRadius: "12px",
-                                fontWeight: "bold",
-                                "&:hover": { transform: "scale(1.05)" },
-                              }}
-                            >
-                              Save Notes
-                            </Button>
-                          </Box>
-                        )}
-                      </Box>
-
-                      {isEditingNotes ? (
-                        <TextField
-                          fullWidth
-                          multiline
-                          rows={4}
-                          variant="outlined"
-                          placeholder="Write your thoughts about this book..."
-                          value={notes}
-                          onChange={(e) => setNotes(e.target.value)}
-                          disabled={savingNotes}
-                          sx={{
-                            "& .MuiOutlinedInput-root": {
-                              borderRadius: "12px",
-                              backgroundColor: "rgba(255, 255, 255, 0.7)",
-                            },
-                          }}
-                        />
-                      ) : (
-                        <Paper
-                          elevation={0}
-                          sx={{
-                            p: 2,
-                            bgcolor: "rgba(255, 255, 255, 0.7)",
-                            borderRadius: "12px",
-                            border: "1px dashed rgba(0, 0, 0, 0.1)",
-                            minHeight: "100px",
-                            position: "relative",
-                          }}
-                        >
-                          {notes ? (
-                            <Typography
-                              variant="body1"
-                              sx={{ whiteSpace: "pre-wrap" }}
-                            >
-                              {notes}
-                            </Typography>
-                          ) : (
-                            <Typography
-                              variant="body2"
-                              color="text.secondary"
-                              sx={{ fontStyle: "italic" }}
-                            >
-                              No notes yet. Click "Add Notes" to share your
-                              thoughts about this book!
-                            </Typography>
-                          )}
-                          <Box
-                            sx={{
-                              position: "absolute",
-                              bottom: "-10px",
-                              right: "10px",
-                              transform: "rotate(-5deg)",
-                              opacity: 0.2,
-                              fontSize: "2rem",
-                            }}
-                          >
-                            📝
-                          </Box>
-                        </Paper>
-                      )}
-                      {savingNotes && (
-                        <Box
-                          sx={{
-                            display: "flex",
-                            justifyContent: "center",
-                            mt: 2,
-                          }}
-                        >
-                          <CircularProgress size={24} color="secondary" />
-                          <Typography variant="body2" sx={{ ml: 1 }}>
-                            Saving your notes...
-                          </Typography>
-                        </Box>
-                      )}
-                    </Box>
-                  </Box>
-                )}
-              </Box>
+              )}
             </Box>
           </Box>
         </Paper>
