@@ -95,9 +95,9 @@ const PickMyShelf: React.FC = () => {
         </Paper>
         <Box>
           {books.length > 0 && (
-            <Box>
-              <Typography variant="h5" gutterBottom>
-                Your Shelf Picks
+            <Box mt={4}>
+              <Typography variant="h6" gutterBottom>
+                Your Picked Shelf
               </Typography>
               <Box
                 sx={{

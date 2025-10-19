@@ -31,6 +31,7 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import BusinessIcon from "@mui/icons-material/Business";
 import LanguageIcon from "@mui/icons-material/Language";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
+import { BookRecommendation } from "../types/BookRecommendation";
 
 interface NewBookFormProps {
   onAddBook: (
@@ -96,6 +97,24 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
 
   // Success notification
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Recommendation state
+  const [recommendations, setRecommendations] = useState<BookRecommendation[]>(
+    []
+  );
+  const [loadingRecommendations, setLoadingRecommendations] = useState(false);
+  const [selectedRecommendation, setSelectedRecommendation] =
+    useState<BookRecommendation | null>(null);
+  const [recommendationModalOpen, setRecommendationModalOpen] = useState(false);
+
+  // Carousel state
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const handlePrev = () => setCarouselIndex((i) => Math.max(i - 1, 0));
+  const handleNext = () =>
+    setCarouselIndex((i) => Math.min(i + 1, recommendations.length - 1));
+  React.useEffect(() => {
+    setCarouselIndex(0);
+  }, [recommendations]);
 
   // Handle tab change
   const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
@@ -237,6 +256,30 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     }
   };
 
+  // Fetch recommendations when the form loads or after adding a book
+  React.useEffect(() => {
+    const fetchRecommendations = async () => {
+      setLoadingRecommendations(true);
+      try {
+        // You can use the entered title/author/isbn or a static list for demo
+        const response = await fetch(`${API_URL}/v1/Books/Recommendations`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ BookTitles: [title, author].filter(Boolean) }),
+        });
+        if (!response.ok) throw new Error("Failed to fetch recommendations");
+        const data = await response.json();
+        setRecommendations(data.recommendations || []);
+      } catch (err) {
+        setRecommendations([]);
+      } finally {
+        setLoadingRecommendations(false);
+      }
+    };
+    // Only fetch if some input is present
+    if (title || author) fetchRecommendations();
+  }, [title, author]);
+
   return (
     <Container maxWidth="md">
       <Paper elevation={3} sx={{ p: 4, mt: 4 }}>
@@ -253,6 +296,81 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
             {successMessage}
           </Alert>
         )}
+
+        {/* Recommendations Carousel or Empty State */}
+        <Box mt={4}>
+          <Typography variant="h6" gutterBottom>
+            Book Recommendations
+          </Typography>
+          {loadingRecommendations ? (
+            <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+              <CircularProgress />
+            </Box>
+          ) : recommendations.length > 0 ? (
+            <Box sx={{ my: 3, textAlign: "center" }}>
+              <Typography variant="h6" gutterBottom>
+                Recommended for you
+              </Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 2,
+                }}
+              >
+                <Button onClick={handlePrev} disabled={carouselIndex === 0}>
+                  &lt;
+                </Button>
+                <Paper
+                  sx={{
+                    p: 2,
+                    textAlign: "center",
+                    cursor: "pointer",
+                    minWidth: 220,
+                  }}
+                  onClick={() => {
+                    setSelectedRecommendation(recommendations[carouselIndex]);
+                    setRecommendationModalOpen(true);
+                  }}
+                >
+                  {recommendations[carouselIndex].coverURL && (
+                    <img
+                      src={recommendations[carouselIndex].coverURL}
+                      alt={recommendations[carouselIndex].title}
+                      style={{
+                        width: "120px",
+                        height: "180px",
+                        objectFit: "cover",
+                        borderRadius: 8,
+                        marginBottom: 8,
+                      }}
+                    />
+                  )}
+                  <Typography variant="subtitle1">
+                    {recommendations[carouselIndex].title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {recommendations[carouselIndex].author}
+                  </Typography>
+                </Paper>
+                <Button
+                  onClick={handleNext}
+                  disabled={carouselIndex === recommendations.length - 1}
+                >
+                  &gt;
+                </Button>
+              </Box>
+              <Typography variant="caption" sx={{ mt: 1 }}>
+                Swipe or use arrows to browse
+              </Typography>
+            </Box>
+          ) : (
+            <Typography color="textSecondary" sx={{ mt: 2 }}>
+              No recommendations available.
+            </Typography>
+          )}
+        </Box>
 
         <Box sx={{ borderBottom: 1, borderColor: "divider", mb: 3 }}>
           <Tabs
@@ -314,6 +432,9 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
               <>
                 {/* Calculate pagination for search results */}
                 {(() => {
+                  <Typography color="textSecondary" sx={{ mt: 2 }}>
+                    No recommendations available.
+                  </Typography>;
                   const indexOfLastResult = currentPage * resultsPerPage;
                   const indexOfFirstResult = indexOfLastResult - resultsPerPage;
                   const currentResults = searchResults.slice(
@@ -587,6 +708,169 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
             </Box>
           </Box>
         )}
+
+        {/* Recommendation Carousel */}
+        {loadingRecommendations ? (
+          <Box sx={{ display: "flex", justifyContent: "center", my: 2 }}>
+            <CircularProgress />
+          </Box>
+        ) : recommendations.length > 0 ? (
+          <Box sx={{ my: 3, textAlign: "center" }}>
+            <Typography variant="h6" gutterBottom>
+              Recommended for you
+            </Typography>
+            <Box
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: 2,
+              }}
+            >
+              <Button onClick={handlePrev} disabled={carouselIndex === 0}>
+                &lt;
+              </Button>
+              <Paper
+                sx={{
+                  p: 2,
+                  textAlign: "center",
+                  cursor: "pointer",
+                  minWidth: 220,
+                }}
+                onClick={() => {
+                  setSelectedRecommendation(recommendations[carouselIndex]);
+                  setRecommendationModalOpen(true);
+                }}
+              >
+                {recommendations[carouselIndex].coverURL && (
+                  <img
+                    src={recommendations[carouselIndex].coverURL}
+                    alt={recommendations[carouselIndex].title}
+                    style={{
+                      width: "120px",
+                      height: "180px",
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}
+                  />
+                )}
+                <Typography variant="subtitle1">
+                  {recommendations[carouselIndex].title}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {recommendations[carouselIndex].author}
+                </Typography>
+              </Paper>
+              <Button
+                onClick={handleNext}
+                disabled={carouselIndex === recommendations.length - 1}
+              >
+                &gt;
+              </Button>
+            </Box>
+            <Typography variant="caption" sx={{ mt: 1 }}>
+              Swipe or use arrows to browse
+            </Typography>
+          </Box>
+        ) : null}
+
+        {/* Recommendation Details Modal */}
+        <Modal
+          open={recommendationModalOpen}
+          onClose={() => setRecommendationModalOpen(false)}
+        >
+          <Box
+            sx={{
+              position: "absolute",
+              top: "50%",
+              left: "50%",
+              transform: "translate(-50%, -50%)",
+              bgcolor: "background.paper",
+              p: 4,
+              borderRadius: 2,
+              boxShadow: 24,
+              minWidth: 320,
+            }}
+          >
+            {selectedRecommendation && (
+              <>
+                {selectedRecommendation.coverURL && (
+                  <img
+                    src={selectedRecommendation.coverURL}
+                    alt={selectedRecommendation.title}
+                    style={{
+                      width: "120px",
+                      height: "180px",
+                      objectFit: "cover",
+                      borderRadius: 8,
+                      marginBottom: 8,
+                    }}
+                  />
+                )}
+                <Typography variant="h6">
+                  {selectedRecommendation.title}
+                </Typography>
+                <Typography variant="subtitle2" color="text.secondary">
+                  {selectedRecommendation.author}
+                </Typography>
+                {selectedRecommendation.description && (
+                  <Typography variant="body2" sx={{ mt: 1 }}>
+                    {selectedRecommendation.description}
+                  </Typography>
+                )}
+                {selectedRecommendation.recommendationReason && (
+                  <Typography
+                    variant="body2"
+                    sx={{ mt: 1, fontStyle: "italic" }}
+                  >
+                    {selectedRecommendation.recommendationReason}
+                  </Typography>
+                )}
+                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    color="primary"
+                    onClick={() => {
+                      onAddBook(
+                        {
+                          title: selectedRecommendation.title,
+                          author: selectedRecommendation.author || "",
+                          isbn: "",
+                          coverURL: selectedRecommendation.coverURL,
+                          description: selectedRecommendation.description,
+                        },
+                        "bookshelf"
+                      );
+                      setRecommendationModalOpen(false);
+                    }}
+                  >
+                    Add to Bookshelf
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    onClick={() => {
+                      onAddBook(
+                        {
+                          title: selectedRecommendation.title,
+                          author: selectedRecommendation.author || "",
+                          isbn: "",
+                          coverURL: selectedRecommendation.coverURL,
+                          description: selectedRecommendation.description,
+                        },
+                        "wishlist"
+                      );
+                      setRecommendationModalOpen(false);
+                    }}
+                  >
+                    Add to Wishlist
+                  </Button>
+                </Box>
+              </>
+            )}
+          </Box>
+        </Modal>
       </Paper>
 
       {/* Book Detail Modal */}
