@@ -35,6 +35,9 @@ const Navbar: React.FC = () => {
           <Button color="inherit" component={RouterLink} to="/wishlist">
             Wishlist
           </Button>
+          <Button color="inherit" component={RouterLink} to="/pick-my-shelf">
+            Pick My Shelf
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>

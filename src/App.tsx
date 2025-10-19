@@ -9,6 +9,7 @@ import BookDetail from "./components/BookDetail";
 import NewBookForm from "./components/NewBookForm";
 import Wishlist from "./components/Wishlist";
 import Home from "./components/Home";
+import PickMyShelf from "./components/PickMyShelf";
 
 const API_URL = "http://localhost:5089";
 
@@ -93,6 +94,7 @@ const App: React.FC = () => {
               element={<NewBookForm onAddBook={handleAddBook} />}
             />
             <Route path="/wishlist" element={<Wishlist />} />
+            <Route path="/pick-my-shelf" element={<PickMyShelf />} />
           </Routes>
         </div>
       </Router>
