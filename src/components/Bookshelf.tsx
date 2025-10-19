@@ -21,6 +21,7 @@ interface Book {
   author?: string;
   coverURL?: string;
   status?: string;
+  dateAdded?: string; // ISO string or undefined
 }
 
 const API_URL = "http://localhost:5089";
@@ -31,7 +32,7 @@ const Bookshelf: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("title-asc");
+  const [sortOption, setSortOption] = useState("date-added-desc"); // Default to date added, newest first
   const [loadingCovers, setLoadingCovers] = useState<Record<string, boolean>>(
     {}
   );
@@ -96,7 +97,17 @@ const Bookshelf: React.FC = () => {
 
   const sortedBooks = [...books].sort((a, b) => {
     let comparison = 0;
-    if (sortOption === "title-asc") {
+    if (sortOption === "date-added-desc") {
+      // Newest first
+      comparison =
+        new Date(b.dateAdded || 0).getTime() -
+        new Date(a.dateAdded || 0).getTime();
+    } else if (sortOption === "date-added-asc") {
+      // Oldest first
+      comparison =
+        new Date(a.dateAdded || 0).getTime() -
+        new Date(b.dateAdded || 0).getTime();
+    } else if (sortOption === "title-asc") {
       comparison = a.title.localeCompare(b.title);
     } else if (sortOption === "title-desc") {
       comparison = b.title.localeCompare(a.title);
@@ -151,6 +162,8 @@ const Bookshelf: React.FC = () => {
             onChange={(e) => setSortOption(e.target.value)}
             style={{ marginLeft: "10px", padding: "8px" }}
           >
+            <option value="date-added-desc">Date Added (Newest First)</option>
+            <option value="date-added-asc">Date Added (Oldest First)</option>
             <option value="title-asc">Title Ascending</option>
             <option value="title-desc">Title Descending</option>
             <option value="author-asc">Author Ascending</option>
