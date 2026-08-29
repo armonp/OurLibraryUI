@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Grid,
   Card,
   CardMedia,
   CardContent,
@@ -11,7 +10,16 @@ import {
   CircularProgress,
   Alert,
   Pagination,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  Button,
+  type SelectChangeEvent,
 } from "@mui/material";
+import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
+import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
+import ImageSearchRoundedIcon from "@mui/icons-material/ImageSearchRounded";
 
 // Define the Book type to match backend data structure
 interface Book {
@@ -25,6 +33,22 @@ interface Book {
 }
 
 const API_URL = "http://localhost:5089";
+
+const COVER_COLORS = ["#0F9B8E", "#FF6B4A", "#F2C46D", "#7C9CE0", "#0B6F65", "#E4AF8E", "#A98FD2"];
+
+const coverColorFor = (title: string) => {
+  const hash = title.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return COVER_COLORS[hash % COVER_COLORS.length];
+};
+
+const SORT_OPTIONS = [
+  { value: "date-added-desc", label: "Date Added (Newest First)" },
+  { value: "date-added-asc", label: "Date Added (Oldest First)" },
+  { value: "title-asc", label: "Title Ascending" },
+  { value: "title-desc", label: "Title Descending" },
+  { value: "author-asc", label: "Author Ascending" },
+  { value: "author-desc", label: "Author Descending" },
+];
 
 const Bookshelf: React.FC = () => {
   const navigate = useNavigate();
@@ -139,164 +163,167 @@ const Bookshelf: React.FC = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
+  const booksWithoutCovers = books.filter((book) => !book.coverURL && book.isbn);
+
   return (
-    <Container maxWidth="lg">
-      <Box sx={{ my: 4, textAlign: "center" }}>
+    <Container maxWidth="lg" sx={{ py: 5 }}>
+      <Box sx={{ mb: 4 }}>
         <Typography variant="h4" component="h2" gutterBottom>
           Bookshelf
         </Typography>
-        <Box sx={{ mb: 4 }}>
-          <input
-            type="text"
-            placeholder="Search books..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{ padding: "8px", width: "100%", maxWidth: "400px" }}
-          />
-          <label htmlFor="sort-dropdown" style={{ marginLeft: "10px" }}>
-            Sort by:
-          </label>
-          <select
-            id="sort-dropdown"
-            value={sortOption}
-            onChange={(e) => setSortOption(e.target.value)}
-            style={{ marginLeft: "10px", padding: "8px" }}
-          >
-            <option value="date-added-desc">Date Added (Newest First)</option>
-            <option value="date-added-asc">Date Added (Oldest First)</option>
-            <option value="title-asc">Title Ascending</option>
-            <option value="title-desc">Title Descending</option>
-            <option value="author-asc">Author Ascending</option>
-            <option value="author-desc">Author Descending</option>
-          </select>
-
-          <button
-            onClick={() => {
-              const booksWithoutCovers = books.filter(
-                (book) => !book.coverURL && book.isbn
-              );
-              booksWithoutCovers.forEach((book) => fetchBookCover(book.id));
-            }}
-            style={{
-              marginLeft: "10px",
-              padding: "8px 16px",
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              borderRadius: "4px",
-              cursor: "pointer",
-            }}
-          >
-            Find All Missing Covers
-          </button>
-        </Box>
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
-            <CircularProgress />
-          </Box>
-        ) : error ? (
-          <Alert severity="error" sx={{ my: 4 }}>
-            {error}
-          </Alert>
-        ) : filteredBooks.length === 0 ? (
-          <Alert severity="info" sx={{ my: 4 }}>
-            No books found. Try a different search term.
-          </Alert>
-        ) : (
-          <>
-            <Box
-              sx={{
-                display: "grid",
-                gridTemplateColumns: {
-                  xs: "repeat(1, 1fr)",
-                  sm: "repeat(2, 1fr)",
-                  md: "repeat(3, 1fr)",
-                  lg: "repeat(4, 1fr)",
-                },
-                gap: 3,
-              }}
-            >
-              {currentBooks.map((book) => (
-                <Box key={book.id}>
-                  <Card
-                    sx={{
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column",
-                      transition: "transform 0.2s",
-                      cursor: "pointer",
-                      "&:hover": {
-                        transform: "scale(1.05)",
-                      },
-                    }}
-                    onClick={() => navigate(`/bookshelf/${book.id}`)}
-                  >
-                    <CardMedia
-                      component="img"
-                      height="200"
-                      image={
-                        book.coverURL ||
-                        `https://via.placeholder.com/200x300?text=${encodeURIComponent(
-                          book.title
-                        )}`
-                      }
-                      alt={book.title}
-                      style={{ objectFit: "contain" }}
-                    />
-                    <CardContent>
-                      <Typography variant="h6" component="h3" gutterBottom>
-                        {book.title}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        {book.author || "Unknown Author"}
-                      </Typography>
-                      {!book.coverURL && book.isbn && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation(); // Prevent card click when button is clicked
-                            fetchBookCover(book.id);
-                          }}
-                          disabled={loadingCovers[book.id]}
-                          style={{
-                            marginTop: "10px",
-                            padding: "5px 10px",
-                            backgroundColor: loadingCovers[book.id]
-                              ? "#cccccc"
-                              : "#1976d2",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: loadingCovers[book.id]
-                              ? "default"
-                              : "pointer",
-                          }}
-                        >
-                          {loadingCovers[book.id] ? "Finding..." : "Find Cover"}
-                        </button>
-                      )}
-                    </CardContent>
-                  </Card>
-                </Box>
-              ))}
-            </Box>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
-                <Pagination
-                  count={totalPages}
-                  page={currentPage}
-                  onChange={handlePageChange}
-                  color="primary"
-                  size="large"
-                  showFirstButton
-                  showLastButton
-                />
-              </Box>
-            )}
-          </>
-        )}
+        <Typography sx={{ color: "text.secondary" }}>
+          {books.length} book{books.length === 1 ? "" : "s"}, sorted by{" "}
+          {SORT_OPTIONS.find((o) => o.value === sortOption)?.label.split(" (")[0].toLowerCase()}
+        </Typography>
       </Box>
+
+      <Box
+        sx={{
+          mb: 4,
+          display: "flex",
+          alignItems: "center",
+          gap: 1.5,
+          flexWrap: "wrap",
+        }}
+      >
+        <TextField
+          placeholder="Search books..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          size="small"
+          sx={{ flex: "1 1 260px", maxWidth: 420 }}
+          slotProps={{
+            input: {
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchRoundedIcon fontSize="small" sx={{ color: "text.secondary" }} />
+                </InputAdornment>
+              ),
+            },
+          }}
+        />
+
+        <Select
+          value={sortOption}
+          onChange={(e: SelectChangeEvent) => setSortOption(e.target.value)}
+          size="small"
+          sx={{ minWidth: 220 }}
+        >
+          {SORT_OPTIONS.map((option) => (
+            <MenuItem key={option.value} value={option.value}>
+              {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+
+        <Button
+          variant="outlined"
+          startIcon={<ImageSearchRoundedIcon />}
+          disabled={booksWithoutCovers.length === 0}
+          onClick={() => {
+            booksWithoutCovers.forEach((book) => fetchBookCover(book.id));
+          }}
+        >
+          Find Missing Covers
+        </Button>
+      </Box>
+
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Alert severity="error" sx={{ my: 4 }}>
+          {error}
+        </Alert>
+      ) : filteredBooks.length === 0 ? (
+        <Alert severity="info" sx={{ my: 4 }}>
+          No books found. Try a different search term.
+        </Alert>
+      ) : (
+        <>
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: {
+                xs: "repeat(1, 1fr)",
+                sm: "repeat(2, 1fr)",
+                md: "repeat(3, 1fr)",
+                lg: "repeat(4, 1fr)",
+              },
+              gap: 3,
+            }}
+          >
+            {currentBooks.map((book) => (
+              <Card
+                key={book.id}
+                sx={{ cursor: "pointer" }}
+                onClick={() => navigate(`/bookshelf/${book.id}`)}
+              >
+                {book.coverURL ? (
+                  <CardMedia
+                    component="img"
+                    height="200"
+                    image={book.coverURL}
+                    alt={book.title}
+                    sx={{ objectFit: "contain", bgcolor: "#FBF8F3" }}
+                  />
+                ) : (
+                  <Box
+                    sx={{
+                      height: 200,
+                      bgcolor: coverColorFor(book.title),
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                    }}
+                  >
+                    <AutoStoriesRoundedIcon sx={{ color: "rgba(255,255,255,0.85)", fontSize: 40 }} />
+                  </Box>
+                )}
+                <CardContent>
+                  <Typography variant="h6" component="h3" sx={{ fontSize: 16 }} gutterBottom>
+                    {book.title}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {book.author || "Unknown Author"}
+                  </Typography>
+                  {!book.coverURL && book.isbn && (
+                    <Button
+                      size="small"
+                      variant="outlined"
+                      sx={{ mt: 1.5 }}
+                      disabled={loadingCovers[book.id]}
+                      onClick={(e) => {
+                        e.stopPropagation(); // Prevent card click when button is clicked
+                        fetchBookCover(book.id);
+                      }}
+                    >
+                      {loadingCovers[book.id] ? "Finding..." : "Find Cover"}
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
+            ))}
+          </Box>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+              <Pagination
+                count={totalPages}
+                page={currentPage}
+                onChange={handlePageChange}
+                color="primary"
+                size="large"
+                shape="rounded"
+                showFirstButton
+                showLastButton
+              />
+            </Box>
+          )}
+        </>
+      )}
     </Container>
   );
 };
