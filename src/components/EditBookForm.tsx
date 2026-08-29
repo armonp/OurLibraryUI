@@ -181,7 +181,7 @@ const EditBookForm: React.FC<EditBookFormProps> = ({
   };
 
   return (
-    <Paper elevation={3} sx={{ p: 3, borderRadius: "10px" }}>
+    <Paper elevation={0} sx={{ p: { xs: 3, md: 4 } }}>
       <Typography variant="h5" gutterBottom>
         Edit Book Details
       </Typography>
