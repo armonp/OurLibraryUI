@@ -15,7 +15,7 @@ import { AuthProvider, getAuthHeaders } from "./auth/AuthContext";
 import ProtectedRoute from "./auth/ProtectedRoute";
 import { DuplicateBookError } from "./types/DuplicateBookError";
 
-const API_URL = "http://localhost:5089";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
 
 const App: React.FC = () => {
   // We don't need to maintain a separate wishlist state since we'll fetch from the API
