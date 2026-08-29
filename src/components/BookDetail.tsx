@@ -8,12 +8,10 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Grid,
   ButtonGroup,
   Chip,
   Snackbar,
   TextField,
-  Divider,
   IconButton,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -24,8 +22,13 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import CategoryIcon from "@mui/icons-material/Category";
 import DescriptionIcon from "@mui/icons-material/Description";
 import BusinessIcon from "@mui/icons-material/Business";
-import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
+import LocalOfferIcon from "@mui/icons-material/LocalOffer";
+import EventIcon from "@mui/icons-material/Event";
+import LanguageIcon from "@mui/icons-material/Language";
 import EditIcon from "@mui/icons-material/Edit";
+import EditNoteIcon from "@mui/icons-material/EditNote";
+import SaveIcon from "@mui/icons-material/Save";
+import CloseIcon from "@mui/icons-material/Close";
 import EditBookForm from "./EditBookForm";
 import { useAuth, getAuthHeaders } from "../auth/AuthContext";
 
@@ -50,6 +53,40 @@ interface Book {
 }
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
+
+const COVER_COLORS = ["#0F9B8E", "#FF6B4A", "#F2C46D", "#7C9CE0", "#0B6F65", "#E4AF8E", "#A98FD2"];
+
+const coverColorFor = (title: string) => {
+  const hash = title.split("").reduce((acc, ch) => acc + ch.charCodeAt(0), 0);
+  return COVER_COLORS[hash % COVER_COLORS.length];
+};
+
+const STATUS_INFO: Record<
+  string,
+  { label: string; color: "primary" | "secondary"; icon: typeof CheckIcon }
+> = {
+  Owned: { label: "On the Shelf", color: "primary", icon: CheckIcon },
+  Wanted: { label: "On the Wishlist", color: "secondary", icon: BookmarkIcon },
+};
+const NOT_IN_COLLECTION_INFO = {
+  label: "Not in Your Collection",
+  color: "default" as const,
+  icon: MenuBookIcon,
+};
+
+const InfoPill: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({
+  icon,
+  children,
+}) => (
+  <Box
+    component="span"
+    className="book-info-tag"
+    sx={{ display: "inline-flex", alignItems: "center", gap: 0.5 }}
+  >
+    {icon}
+    {children}
+  </Box>
+);
 
 const BookDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -151,7 +188,7 @@ const BookDetail: React.FC = () => {
     navigate("/bookshelf");
   };
 
-  const addToCollection = async (destination: string) => {
+  const addToCollection = async (destination: "bookshelf" | "wishlist") => {
     if (!book) return;
 
     try {
@@ -161,7 +198,7 @@ const BookDetail: React.FC = () => {
       // Prepare the book data with appropriate status
       const bookToAdd = {
         ...book,
-        status: destination === "wishlist" ? "Wishlist" : "In Collection",
+        status: destination === "wishlist" ? "Wanted" : "Owned",
       };
 
       // If the book has an ID already, update it, otherwise create new
@@ -290,6 +327,11 @@ const BookDetail: React.FC = () => {
     }
   };
 
+  const cancelEditNotes = () => {
+    setNotes(book?.notes || "");
+    setIsEditingNotes(false);
+  };
+
   // Toggle edit mode
   const handleEnterEditMode = () => {
     if (!book) return;
@@ -319,7 +361,7 @@ const BookDetail: React.FC = () => {
 
   if (loading) {
     return (
-      <Container maxWidth="md">
+      <Container maxWidth="md" sx={{ py: 5 }}>
         <Box sx={{ display: "flex", justifyContent: "center", my: 8 }}>
           <CircularProgress />
         </Box>
@@ -329,244 +371,174 @@ const BookDetail: React.FC = () => {
 
   if (error || !book) {
     return (
-      <Container maxWidth="md">
-        <Box sx={{ my: 4 }}>
-          <Button
-            startIcon={<ArrowBackIcon />}
-            onClick={handleBack}
-            variant="outlined"
-            sx={{ mb: 2 }}
-          >
-            Back to Bookshelf
-          </Button>
-          <Alert severity="error" sx={{ mt: 2 }}>
-            {error || "Book not found"}
-          </Alert>
-        </Box>
+      <Container maxWidth="md" sx={{ py: 5 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} variant="outlined">
+          Back to Bookshelf
+        </Button>
+        <Alert severity="error" sx={{ mt: 3 }}>
+          {error || "Book not found"}
+        </Alert>
       </Container>
     );
   }
 
+  const isInCollection = !!book.status && book.status !== "Not In Collection";
+  const statusInfo = book.status && STATUS_INFO[book.status]
+    ? STATUS_INFO[book.status]
+    : NOT_IN_COLLECTION_INFO;
+  const StatusIcon = statusInfo.icon;
+  const isbn = book.ISBN || book.isbn;
+
   return (
-    <Container maxWidth="md">
-      {/* Success/Error messages */}
+    <Container maxWidth="md" sx={{ py: 5 }}>
       <Snackbar
         open={!!statusMessage}
-        autoHideDuration={6000}
+        autoHideDuration={5000}
         onClose={() => setStatusMessage(null)}
         anchorOrigin={{ vertical: "top", horizontal: "center" }}
       >
-        <Alert
-          onClose={() => setStatusMessage(null)}
-          severity="success"
-          sx={{ width: "100%", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}
-        >
+        <Alert onClose={() => setStatusMessage(null)} severity="success" sx={{ width: "100%" }}>
           {statusMessage}
         </Alert>
       </Snackbar>
 
-      <Box sx={{ my: 4 }}>
-        <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-          <Button
-            startIcon={<span style={{ fontSize: "1.2rem" }}>🏠</span>}
-            onClick={handleBack}
-            variant="contained"
-            color="secondary"
-            sx={{
-              borderRadius: "20px",
-              boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-              transition: "all 0.3s ease",
-              fontWeight: "bold",
-              px: 3,
-              py: 1,
-              "&:hover": {
-                transform: "translateY(-3px) scale(1.02)",
-                boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
-              },
-            }}
-          >
-            Back to Magic Bookshelf
-          </Button>
+      <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 2, mb: 3 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={handleBack} variant="outlined">
+          Back to Bookshelf
+        </Button>
 
-          {/* Edit Button - Only show if logged in, book is in collection, and not in edit mode */}
-          {isAuthenticated && book.id && book.status !== "Not In Collection" && !isEditMode && (
-            <Button
-              onClick={handleEnterEditMode}
-              variant="outlined"
-              color="secondary"
-              startIcon={<EditIcon />}
-              sx={{
-                borderRadius: "20px",
-                fontWeight: "bold",
-                transition: "all 0.3s",
-                boxShadow: "0 2px 5px rgba(0,0,0,0.1)",
-                px: 3,
-                py: 1,
-                "&:hover": {
-                  transform: "scale(1.02)",
-                  boxShadow: "0 3px 8px rgba(0,0,0,0.15)",
-                },
-              }}
-            >
-              Edit Book Details
-            </Button>
-          )}
-        </Box>
-        <Paper
-          elevation={3}
-          sx={{
-            p: 4,
-            borderRadius: "16px",
-            background: "linear-gradient(145deg, #ffffff, #f9f7f2)",
-            boxShadow: "0 10px 30px rgba(0, 0, 0, 0.15)",
-            border: "1px solid rgba(0, 0, 0, 0.05)",
-            position: "relative",
-            overflow: "hidden",
-          }}
-        >
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              gap: 4,
-            }}
+        {isAuthenticated && book.id && isInCollection && !isEditMode && (
+          <Button
+            onClick={handleEnterEditMode}
+            variant="outlined"
+            color="secondary"
+            startIcon={<EditIcon />}
           >
-            {/* Left column - Book cover */}
-            <Box
-              sx={{
-                flex: { xs: "1", md: "0 0 30%" },
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-              }}
-            >
-              <img
-                src={
-                  book.coverURL ||
-                  `https://via.placeholder.com/300x450?text=${encodeURIComponent(
-                    book.title
-                  )}`
-                }
-                alt={book.title}
-                className="float-animation"
-                style={{
-                  maxWidth: "100%",
-                  height: "auto",
-                  maxHeight: "400px",
-                  objectFit: "contain",
-                  boxShadow: "0 15px 35px rgba(0,0,0,0.2)",
-                  borderRadius: "8px",
-                  transition: "all 0.3s ease",
+            Edit Details
+          </Button>
+        )}
+      </Box>
+
+      {isEditMode ? (
+        <EditBookForm book={book} onSave={handleSaveEdit} onCancel={handleCancelEdit} />
+      ) : (
+        <Paper elevation={0} sx={{ p: { xs: 3, md: 4 } }}>
+          <Box sx={{ display: "flex", flexDirection: { xs: "column", md: "row" }, gap: 4 }}>
+            {/* Cover column */}
+            <Box sx={{ flex: { xs: "1", md: "0 0 220px" }, display: "flex", flexDirection: "column", alignItems: "center", gap: 1.5 }}>
+              <Box
+                sx={{
+                  width: "100%",
+                  maxWidth: 220,
+                  aspectRatio: "2 / 3",
+                  borderRadius: "16px",
+                  overflow: "hidden",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  bgcolor: book.coverURL ? "#fff" : coverColorFor(book.title),
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
                 }}
-              />
-              {isAuthenticated && !book.coverURL && (book.ISBN || book.isbn) && (
+              >
+                {book.coverURL ? (
+                  <img
+                    src={book.coverURL}
+                    alt={book.title}
+                    style={{ width: "100%", height: "100%", objectFit: "contain" }}
+                  />
+                ) : (
+                  <MenuBookIcon sx={{ fontSize: 56, color: "rgba(255,255,255,0.85)" }} />
+                )}
+              </Box>
+              {isAuthenticated && !book.coverURL && isbn && (
                 <Button
                   variant="outlined"
                   size="small"
                   onClick={fetchBookCover}
                   disabled={loadingCover}
-                  startIcon={
-                    loadingCover ? <CircularProgress size={16} /> : undefined
-                  }
+                  startIcon={loadingCover ? <CircularProgress size={16} /> : undefined}
                 >
                   {loadingCover ? "Finding Cover..." : "Find Cover Image"}
                 </Button>
               )}
             </Box>
 
-            {/* Right column - Book details */}
-            <Box sx={{ flex: "1" }}>
-              <Box sx={{ position: "relative" }}>
-                {isEditMode ? (
-                  <EditBookForm
-                    book={book}
-                    onSave={handleSaveEdit}
-                    onCancel={handleCancelEdit}
-                  />
-                ) : (
-                  <Typography
-                    variant="h4"
-                    component="h1"
-                    gutterBottom
-                    sx={{
-                      fontWeight: 700,
-                      background:
-                        "linear-gradient(45deg, #ff9b54, #ff7754, #e65c9c, #8d67af)",
-                      WebkitBackgroundClip: "text",
-                      WebkitTextFillColor: "transparent",
-                      textShadow: "0 2px 4px rgba(0,0,0,0.1)",
-                      letterSpacing: "-0.5px",
-                      display: "inline-block",
-                      position: "relative",
-                      "&::after": {
-                        content: '""',
-                        position: "absolute",
-                        bottom: "0px",
-                        left: 0,
-                        width: "100%",
-                        height: "4px",
-                        background:
-                          "linear-gradient(90deg, #FF9AA2, #FFB7B2, #FFDAC1, #E2F0CB, #B5EAD7)",
-                        borderRadius: "2px",
-                      },
-                    }}
-                  >
-                    {book.title}{" "}
-                    <span
-                      className="wiggle"
-                      style={{ fontSize: "1rem", display: "inline-block" }}
-                    >
-                      📖
-                    </span>
+            {/* Details column */}
+            <Box sx={{ flex: "1", minWidth: 0 }}>
+              <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: 1.5 }}>
+                <Typography variant="h4" component="h1">
+                  {book.title}
+                </Typography>
+                <Chip
+                  icon={<StatusIcon fontSize="small" />}
+                  label={statusInfo.label}
+                  color={statusInfo.color}
+                  sx={{ flexShrink: 0 }}
+                />
+              </Box>
+              <Typography variant="subtitle1" sx={{ color: "text.secondary", mb: 2 }}>
+                {book.author || "Unknown Author"}
+              </Typography>
+
+              {addSuccess && (
+                <Alert severity="success" sx={{ mb: 2 }}>
+                  {addSuccess}
+                </Alert>
+              )}
+              {addError && (
+                <Alert severity="error" sx={{ mb: 2 }}>
+                  {addError}
+                </Alert>
+              )}
+
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
+                {isbn && <span className="isbn-tag">ISBN {isbn}</span>}
+                {book.publishedYear && (
+                  <InfoPill icon={<EventIcon sx={{ fontSize: 15 }} />}>{book.publishedYear}</InfoPill>
+                )}
+                {!!book.pageCount && (
+                  <InfoPill icon={<MenuBookIcon sx={{ fontSize: 15 }} />}>{book.pageCount} pages</InfoPill>
+                )}
+                {book.language && (
+                  <InfoPill icon={<LanguageIcon sx={{ fontSize: 15 }} />}>{book.language}</InfoPill>
+                )}
+                {book.edition && (
+                  <InfoPill icon={<LocalOfferIcon sx={{ fontSize: 15 }} />}>{book.edition}</InfoPill>
+                )}
+                {!!book.publishers?.length && (
+                  <InfoPill icon={<BusinessIcon sx={{ fontSize: 15 }} />}>
+                    {book.publishers.join(", ")}
+                  </InfoPill>
+                )}
+              </Box>
+
+              {!!(book.genres?.length || book.subjects?.length) && (
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1, mt: 2 }}>
+                  {[...(book.genres || []), ...(book.subjects || [])].map((tag) => (
+                    <Chip key={tag} size="small" icon={<CategoryIcon />} label={tag} variant="outlined" />
+                  ))}
+                </Box>
+              )}
+
+              {book.description && (
+                <Box className="book-detail-section">
+                  <Typography component="h4">
+                    <DescriptionIcon fontSize="small" /> Description
                   </Typography>
-                )}
+                  <Box className="book-description">{book.description}</Box>
+                </Box>
+              )}
 
-                {addSuccess && (
-                  <Alert
-                    severity="success"
-                    sx={{
-                      mb: 2,
-                      borderRadius: "12px",
-                      animation: "fadeIn 0.5s",
-                    }}
-                  >
-                    {addSuccess}
-                  </Alert>
-                )}
-                {addError && (
-                  <Alert
-                    severity="error"
-                    sx={{
-                      mb: 2,
-                      borderRadius: "12px",
-                      animation: "fadeIn 0.5s",
-                    }}
-                  >
-                    {addError}
-                  </Alert>
-                )}
-
-                {isAuthenticated &&
-                  (!book.id ||
-                    !book.status ||
-                    book.status === "Not In Collection") && (
-                  <Box sx={{ display: "flex", gap: 2, mb: 3, mt: 1 }}>
+              {isAuthenticated && (
+                !isInCollection ? (
+                  <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 3 }}>
                     <Button
                       variant="contained"
                       color="primary"
                       onClick={() => addToCollection("bookshelf")}
                       disabled={addingToCollection}
                       startIcon={<MenuBookIcon />}
-                      sx={{
-                        borderRadius: "20px",
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.15)",
-                        transition: "all 0.3s ease",
-                        fontWeight: "bold",
-                        "&:hover": {
-                          transform: "translateY(-3px)",
-                          boxShadow: "0 6px 12px rgba(0,0,0,0.2)",
-                        },
-                      }}
                     >
                       Add to Bookshelf
                     </Button>
@@ -576,63 +548,99 @@ const BookDetail: React.FC = () => {
                       onClick={() => addToCollection("wishlist")}
                       disabled={addingToCollection}
                       startIcon={<BookmarkIcon />}
-                      sx={{
-                        borderRadius: "20px",
-                        transition: "all 0.3s ease",
-                        fontWeight: "bold",
-                        "&:hover": {
-                          transform: "translateY(-3px)",
-                        },
-                      }}
                     >
                       Add to Wishlist
                     </Button>
                   </Box>
-                )}
-
-                <Box
-                  sx={{
-                    position: "absolute",
-                    top: "-12px",
-                    right: "-8px",
-                    transform: "rotate(15deg)",
-                    animation: "grow 3s infinite ease-in-out",
-                    display: { xs: "none", sm: "block" },
-                  }}
-                >
-                  <span style={{ fontSize: "1.8rem" }}>✨</span>
-                </Box>
-              </Box>
-
-              {/* Show book details only when not in edit mode */}
-              {!isEditMode && (
-                <Box>
-                  <Typography
-                    variant="h6"
-                    color="text.secondary"
-                    gutterBottom
-                    sx={{
-                      fontWeight: 600,
-                      color: "#007bff",
-                      textShadow: "0 1px 1px rgba(0,0,0,0.05)",
-                    }}
-                  >
-                    {book.author || "Unknown Author"}
-                  </Typography>
-                </Box>
+                ) : (
+                  <Box sx={{ mt: 3 }}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setShowStatusControls((v) => !v)}
+                    >
+                      {showStatusControls ? "Hide status options" : "Change status"}
+                    </Button>
+                    {showStatusControls && (
+                      <ButtonGroup sx={{ mt: 1, display: "flex", flexWrap: "wrap" }} disabled={updatingStatus}>
+                        <Button
+                          variant={book.status === "Owned" ? "contained" : "outlined"}
+                          onClick={() => updateStatus("Owned")}
+                          startIcon={<CheckIcon />}
+                        >
+                          Owned
+                        </Button>
+                        <Button
+                          variant={book.status === "Wanted" ? "contained" : "outlined"}
+                          onClick={() => updateStatus("Wanted")}
+                          startIcon={<BookmarkIcon />}
+                        >
+                          Wishlist
+                        </Button>
+                        <Button
+                          color="error"
+                          variant="outlined"
+                          onClick={() => updateStatus("Not In Collection")}
+                          startIcon={<RemoveCircleIcon />}
+                        >
+                          Remove
+                        </Button>
+                      </ButtonGroup>
+                    )}
+                  </Box>
+                )
               )}
+
+              <Box className="notes-container" sx={{ mt: 3 }}>
+                <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 1 }}>
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ display: "flex", alignItems: "center", gap: 0.75, fontWeight: 700, color: "primary.dark" }}
+                  >
+                    <EditNoteIcon fontSize="small" /> Your Notes
+                  </Typography>
+                  {isAuthenticated && !isEditingNotes && book.id && (
+                    <IconButton size="small" onClick={() => setIsEditingNotes(true)}>
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  )}
+                </Box>
+
+                {isAuthenticated && isEditingNotes ? (
+                  <>
+                    <TextField
+                      fullWidth
+                      multiline
+                      minRows={3}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Jot down anything you want to remember about this book..."
+                    />
+                    <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 1, mt: 1.5 }}>
+                      <Button size="small" variant="outlined" onClick={cancelEditNotes} startIcon={<CloseIcon />} disabled={savingNotes}>
+                        Cancel
+                      </Button>
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={saveNotes}
+                        disabled={savingNotes}
+                        startIcon={savingNotes ? <CircularProgress size={16} /> : <SaveIcon />}
+                      >
+                        {savingNotes ? "Saving..." : "Save"}
+                      </Button>
+                    </Box>
+                  </>
+                ) : (
+                  <Typography variant="body2" sx={{ color: book.notes ? "text.primary" : "text.secondary" }}>
+                    {book.notes || "No notes yet."}
+                  </Typography>
+                )}
+              </Box>
             </Box>
           </Box>
         </Paper>
-      </Box>
-
-      <Snackbar
-        open={statusMessage !== null}
-        autoHideDuration={5000}
-        onClose={() => setStatusMessage(null)}
-        message={statusMessage}
-        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
-      />
+      )}
     </Container>
   );
 };

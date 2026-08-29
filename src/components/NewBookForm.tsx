@@ -33,7 +33,10 @@ import LanguageIcon from "@mui/icons-material/Language";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { BookRecommendation } from "../types/BookRecommendation";
+import { Book as SharedBook } from "../types/Book";
+import { DuplicateBookError } from "../types/DuplicateBookError";
 import BarcodeScannerModal from "./BarcodeScannerModal";
+import DuplicateBookModal from "./DuplicateBookModal";
 
 interface NewBookFormProps {
   onAddBook: (
@@ -106,6 +109,27 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
 
   // Success notification
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  // Duplicate-book notification
+  const [duplicateModalOpen, setDuplicateModalOpen] = useState<boolean>(false);
+  const [duplicateBook, setDuplicateBook] = useState<SharedBook | null>(null);
+
+  // Wraps onAddBook so a duplicate ISBN shows a modal instead of failing silently
+  const addBookSafely = async (
+    book: Parameters<NewBookFormProps["onAddBook"]>[0],
+    destination: string = "bookshelf"
+  ) => {
+    try {
+      return await onAddBook(book, destination);
+    } catch (error) {
+      if (error instanceof DuplicateBookError) {
+        setDuplicateBook(error.existingBook);
+        setDuplicateModalOpen(true);
+        return null;
+      }
+      throw error;
+    }
+  };
 
   // Recommendation state
   const [recommendations, setRecommendations] = useState<BookRecommendation[]>(
@@ -181,7 +205,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     e.preventDefault();
     if (title && author && isbn) {
       try {
-        const result = await onAddBook(
+        const result = await addBookSafely(
           {
             title,
             author,
@@ -273,7 +297,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
   ) => {
     const isbn = book.ISBN || book.isbn || "";
 
-    const result = await onAddBook(
+    const result = await addBookSafely(
       {
         title: book.title,
         author: book.author || "Unknown",
@@ -1012,7 +1036,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                     variant="contained"
                     color="primary"
                     onClick={() => {
-                      onAddBook(
+                      addBookSafely(
                         {
                           title: selectedRecommendation.title,
                           author: selectedRecommendation.author || "",
@@ -1031,7 +1055,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                     variant="outlined"
                     color="secondary"
                     onClick={() => {
-                      onAddBook(
+                      addBookSafely(
                         {
                           title: selectedRecommendation.title,
                           author: selectedRecommendation.author || "",
@@ -1309,6 +1333,13 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
           )}
         </Box>
       </Modal>
+
+      {/* Duplicate Book Modal */}
+      <DuplicateBookModal
+        open={duplicateModalOpen}
+        onClose={() => setDuplicateModalOpen(false)}
+        existingBook={duplicateBook}
+      />
     </Container>
   );
 };
