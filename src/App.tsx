@@ -10,6 +10,7 @@ import NewBookForm from "./components/NewBookForm";
 import Wishlist from "./components/Wishlist";
 import Home from "./components/Home";
 import PickMyShelf from "./components/PickMyShelf";
+import { DuplicateBookError } from "./types/DuplicateBookError";
 
 const API_URL = "http://localhost:5089";
 
@@ -64,6 +65,10 @@ const App: React.FC = () => {
       });
 
       if (!response.ok) {
+        if (response.status === 409) {
+          const errorBody = await response.json().catch(() => null);
+          throw new DuplicateBookError(errorBody?.existingBook ?? null);
+        }
         throw new Error(
           `Failed to add book: ${response.status} ${response.statusText}`
         );
@@ -73,6 +78,9 @@ const App: React.FC = () => {
 
       return addedBook;
     } catch (error) {
+      if (error instanceof DuplicateBookError) {
+        throw error;
+      }
       console.error("Error adding book:", error);
       return null;
     }
