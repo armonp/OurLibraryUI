@@ -10,6 +10,9 @@ import NewBookForm from "./components/NewBookForm";
 import Wishlist from "./components/Wishlist";
 import Home from "./components/Home";
 import PickMyShelf from "./components/PickMyShelf";
+import Login from "./components/Login";
+import { AuthProvider, getAuthHeaders } from "./auth/AuthContext";
+import ProtectedRoute from "./auth/ProtectedRoute";
 import { DuplicateBookError } from "./types/DuplicateBookError";
 
 const API_URL = "http://localhost:5089";
@@ -60,6 +63,7 @@ const App: React.FC = () => {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(requestBody),
       });
@@ -90,21 +94,28 @@ const App: React.FC = () => {
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <Router>
-        <div className="App">
-          <Navbar />
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/bookshelf" element={<Bookshelf />} />
-            <Route path="/bookshelf/:id" element={<BookDetail />} />
-            <Route path="/book-detail" element={<BookDetail />} />
-            <Route
-              path="/new-book"
-              element={<NewBookForm onAddBook={handleAddBook} />}
-            />
-            <Route path="/wishlist" element={<Wishlist />} />
-            <Route path="/pick-my-shelf" element={<PickMyShelf />} />
-          </Routes>
-        </div>
+        <AuthProvider>
+          <div className="App">
+            <Navbar />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/bookshelf" element={<Bookshelf />} />
+              <Route path="/bookshelf/:id" element={<BookDetail />} />
+              <Route path="/book-detail" element={<BookDetail />} />
+              <Route
+                path="/new-book"
+                element={
+                  <ProtectedRoute>
+                    <NewBookForm onAddBook={handleAddBook} />
+                  </ProtectedRoute>
+                }
+              />
+              <Route path="/wishlist" element={<Wishlist />} />
+              <Route path="/pick-my-shelf" element={<PickMyShelf />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </div>
+        </AuthProvider>
       </Router>
     </ThemeProvider>
   );

@@ -20,6 +20,7 @@ import {
 import SearchRoundedIcon from "@mui/icons-material/SearchRounded";
 import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
 import ImageSearchRoundedIcon from "@mui/icons-material/ImageSearchRounded";
+import { useAuth, getAuthHeaders } from "../auth/AuthContext";
 
 // Define the Book type to match backend data structure
 interface Book {
@@ -52,6 +53,7 @@ const SORT_OPTIONS = [
 
 const Bookshelf: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -96,6 +98,7 @@ const Bookshelf: React.FC = () => {
       setLoadingCovers((prev) => ({ ...prev, [id]: true }));
       const response = await fetch(`${API_URL}/v1/Books/${id}/cover`, {
         method: "PUT",
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -216,16 +219,18 @@ const Bookshelf: React.FC = () => {
           ))}
         </Select>
 
-        <Button
-          variant="outlined"
-          startIcon={<ImageSearchRoundedIcon />}
-          disabled={booksWithoutCovers.length === 0}
-          onClick={() => {
-            booksWithoutCovers.forEach((book) => fetchBookCover(book.id));
-          }}
-        >
-          Find Missing Covers
-        </Button>
+        {isAuthenticated && (
+          <Button
+            variant="outlined"
+            startIcon={<ImageSearchRoundedIcon />}
+            disabled={booksWithoutCovers.length === 0}
+            onClick={() => {
+              booksWithoutCovers.forEach((book) => fetchBookCover(book.id));
+            }}
+          >
+            Find Missing Covers
+          </Button>
+        )}
       </Box>
 
       {loading ? (
@@ -288,7 +293,7 @@ const Bookshelf: React.FC = () => {
                   <Typography variant="body2" color="text.secondary">
                     {book.author || "Unknown Author"}
                   </Typography>
-                  {!book.coverURL && book.isbn && (
+                  {isAuthenticated && !book.coverURL && book.isbn && (
                     <Button
                       size="small"
                       variant="outlined"

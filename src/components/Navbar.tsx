@@ -1,5 +1,5 @@
 import React from "react";
-import { Link as RouterLink, useLocation } from "react-router-dom";
+import { Link as RouterLink, useLocation, useNavigate } from "react-router-dom";
 import {
   AppBar,
   Toolbar,
@@ -13,18 +13,16 @@ import AddCircleOutlineRoundedIcon from "@mui/icons-material/AddCircleOutlineRou
 import FavoriteBorderRoundedIcon from "@mui/icons-material/FavoriteBorderRounded";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import LoginRoundedIcon from "@mui/icons-material/LoginRounded";
+import LogoutRoundedIcon from "@mui/icons-material/LogoutRounded";
+import { useAuth } from "../auth/AuthContext";
 
-const NAV_ITEMS = [
+const BASE_NAV_ITEMS = [
   { label: "Home", to: "/", icon: <HomeRoundedIcon fontSize="small" /> },
   {
     label: "Bookshelf",
     to: "/bookshelf",
     icon: <AutoStoriesRoundedIcon fontSize="small" />,
-  },
-  {
-    label: "Enter New Book",
-    to: "/new-book",
-    icon: <AddCircleOutlineRoundedIcon fontSize="small" />,
   },
   {
     label: "Wishlist",
@@ -38,10 +36,28 @@ const NAV_ITEMS = [
   },
 ];
 
+const OWNER_NAV_ITEM = {
+  label: "Enter New Book",
+  to: "/new-book",
+  icon: <AddCircleOutlineRoundedIcon fontSize="small" />,
+};
+
 const Navbar: React.FC = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const location = useLocation();
+  const navigate = useNavigate();
+  const { isAuthenticated, logout } = useAuth();
+
+  // Only the owner can add books, so only show that link when logged in.
+  const navItems = isAuthenticated
+    ? [...BASE_NAV_ITEMS.slice(0, 2), OWNER_NAV_ITEM, ...BASE_NAV_ITEMS.slice(2)]
+    : BASE_NAV_ITEMS;
+
+  const handleLogout = () => {
+    logout();
+    navigate("/");
+  };
 
   return (
     <AppBar position="static" elevation={0}>
@@ -95,7 +111,7 @@ const Navbar: React.FC = () => {
             width: isMobile ? "100%" : "auto",
           }}
         >
-          {NAV_ITEMS.map((item) => {
+          {navItems.map((item) => {
             const active = location.pathname === item.to;
             return (
               <Box
@@ -127,27 +143,81 @@ const Navbar: React.FC = () => {
           })}
         </Box>
 
-        <Box
-          component={RouterLink}
-          to="/new-book"
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            gap: 0.75,
-            bgcolor: "primary.main",
-            color: "#fff",
-            textDecoration: "none",
-            fontWeight: 700,
-            fontSize: 14,
-            px: 2.25,
-            py: 1.1,
-            borderRadius: "999px",
-            transition: "background-color 0.15s ease",
-            "&:hover": { bgcolor: "primary.dark" },
-          }}
-        >
-          <AddRoundedIcon fontSize="small" />
-          Add Book
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          {isAuthenticated ? (
+            <>
+              <Box
+                component={RouterLink}
+                to="/new-book"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  bgcolor: "primary.main",
+                  color: "#fff",
+                  textDecoration: "none",
+                  fontWeight: 700,
+                  fontSize: 14,
+                  px: 2.25,
+                  py: 1.1,
+                  borderRadius: "999px",
+                  transition: "background-color 0.15s ease",
+                  "&:hover": { bgcolor: "primary.dark" },
+                }}
+              >
+                <AddRoundedIcon fontSize="small" />
+                Add Book
+              </Box>
+              <Box
+                component="button"
+                onClick={handleLogout}
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.75,
+                  bgcolor: "transparent",
+                  border: "1px solid",
+                  borderColor: "divider",
+                  color: "text.secondary",
+                  fontWeight: 600,
+                  fontSize: 14,
+                  px: 2,
+                  py: 1,
+                  borderRadius: "999px",
+                  cursor: "pointer",
+                  fontFamily: "inherit",
+                  transition: "background-color 0.15s ease",
+                  "&:hover": { bgcolor: "#F5F2EC" },
+                }}
+              >
+                <LogoutRoundedIcon fontSize="small" />
+                Log Out
+              </Box>
+            </>
+          ) : (
+            <Box
+              component={RouterLink}
+              to="/login"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                gap: 0.75,
+                bgcolor: "primary.main",
+                color: "#fff",
+                textDecoration: "none",
+                fontWeight: 700,
+                fontSize: 14,
+                px: 2.25,
+                py: 1.1,
+                borderRadius: "999px",
+                transition: "background-color 0.15s ease",
+                "&:hover": { bgcolor: "primary.dark" },
+              }}
+            >
+              <LoginRoundedIcon fontSize="small" />
+              Log In
+            </Box>
+          )}
         </Box>
       </Toolbar>
     </AppBar>

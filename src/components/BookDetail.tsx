@@ -30,6 +30,7 @@ import EditNoteIcon from "@mui/icons-material/EditNote";
 import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import EditBookForm from "./EditBookForm";
+import { useAuth, getAuthHeaders } from "../auth/AuthContext";
 
 // Define the Book interface to match with backend
 interface Book {
@@ -91,6 +92,7 @@ const BookDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [book, setBook] = useState<Book | null>(location.state?.book || null);
   const [loading, setLoading] = useState(!location.state?.book);
   const [error, setError] = useState<string | null>(null);
@@ -159,6 +161,7 @@ const BookDetail: React.FC = () => {
       setLoadingCover(true);
       const response = await fetch(`${API_URL}/v1/Books/${book.id}/cover`, {
         method: "PUT",
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -208,6 +211,7 @@ const BookDetail: React.FC = () => {
         method,
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(bookToAdd),
       });
@@ -259,6 +263,7 @@ const BookDetail: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedBook),
       });
@@ -300,6 +305,7 @@ const BookDetail: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedBook),
       });
@@ -401,7 +407,7 @@ const BookDetail: React.FC = () => {
           Back to Bookshelf
         </Button>
 
-        {book.id && isInCollection && !isEditMode && (
+        {isAuthenticated && book.id && isInCollection && !isEditMode && (
           <Button
             onClick={handleEnterEditMode}
             variant="outlined"
@@ -445,7 +451,7 @@ const BookDetail: React.FC = () => {
                   <MenuBookIcon sx={{ fontSize: 56, color: "rgba(255,255,255,0.85)" }} />
                 )}
               </Box>
-              {!book.coverURL && isbn && (
+              {isAuthenticated && !book.coverURL && isbn && (
                 <Button
                   variant="outlined"
                   size="small"
@@ -524,63 +530,65 @@ const BookDetail: React.FC = () => {
                 </Box>
               )}
 
-              {!isInCollection ? (
-                <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 3 }}>
-                  <Button
-                    variant="contained"
-                    color="primary"
-                    onClick={() => addToCollection("bookshelf")}
-                    disabled={addingToCollection}
-                    startIcon={<MenuBookIcon />}
-                  >
-                    Add to Bookshelf
-                  </Button>
-                  <Button
-                    variant="outlined"
-                    color="secondary"
-                    onClick={() => addToCollection("wishlist")}
-                    disabled={addingToCollection}
-                    startIcon={<BookmarkIcon />}
-                  >
-                    Add to Wishlist
-                  </Button>
-                </Box>
-              ) : (
-                <Box sx={{ mt: 3 }}>
-                  <Button
-                    variant="text"
-                    size="small"
-                    onClick={() => setShowStatusControls((v) => !v)}
-                  >
-                    {showStatusControls ? "Hide status options" : "Change status"}
-                  </Button>
-                  {showStatusControls && (
-                    <ButtonGroup sx={{ mt: 1, display: "flex", flexWrap: "wrap" }} disabled={updatingStatus}>
-                      <Button
-                        variant={book.status === "Owned" ? "contained" : "outlined"}
-                        onClick={() => updateStatus("Owned")}
-                        startIcon={<CheckIcon />}
-                      >
-                        Owned
-                      </Button>
-                      <Button
-                        variant={book.status === "Wanted" ? "contained" : "outlined"}
-                        onClick={() => updateStatus("Wanted")}
-                        startIcon={<BookmarkIcon />}
-                      >
-                        Wishlist
-                      </Button>
-                      <Button
-                        color="error"
-                        variant="outlined"
-                        onClick={() => updateStatus("Not In Collection")}
-                        startIcon={<RemoveCircleIcon />}
-                      >
-                        Remove
-                      </Button>
-                    </ButtonGroup>
-                  )}
-                </Box>
+              {isAuthenticated && (
+                !isInCollection ? (
+                  <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap", mt: 3 }}>
+                    <Button
+                      variant="contained"
+                      color="primary"
+                      onClick={() => addToCollection("bookshelf")}
+                      disabled={addingToCollection}
+                      startIcon={<MenuBookIcon />}
+                    >
+                      Add to Bookshelf
+                    </Button>
+                    <Button
+                      variant="outlined"
+                      color="secondary"
+                      onClick={() => addToCollection("wishlist")}
+                      disabled={addingToCollection}
+                      startIcon={<BookmarkIcon />}
+                    >
+                      Add to Wishlist
+                    </Button>
+                  </Box>
+                ) : (
+                  <Box sx={{ mt: 3 }}>
+                    <Button
+                      variant="text"
+                      size="small"
+                      onClick={() => setShowStatusControls((v) => !v)}
+                    >
+                      {showStatusControls ? "Hide status options" : "Change status"}
+                    </Button>
+                    {showStatusControls && (
+                      <ButtonGroup sx={{ mt: 1, display: "flex", flexWrap: "wrap" }} disabled={updatingStatus}>
+                        <Button
+                          variant={book.status === "Owned" ? "contained" : "outlined"}
+                          onClick={() => updateStatus("Owned")}
+                          startIcon={<CheckIcon />}
+                        >
+                          Owned
+                        </Button>
+                        <Button
+                          variant={book.status === "Wanted" ? "contained" : "outlined"}
+                          onClick={() => updateStatus("Wanted")}
+                          startIcon={<BookmarkIcon />}
+                        >
+                          Wishlist
+                        </Button>
+                        <Button
+                          color="error"
+                          variant="outlined"
+                          onClick={() => updateStatus("Not In Collection")}
+                          startIcon={<RemoveCircleIcon />}
+                        >
+                          Remove
+                        </Button>
+                      </ButtonGroup>
+                    )}
+                  </Box>
+                )
               )}
 
               <Box className="notes-container" sx={{ mt: 3 }}>
@@ -591,14 +599,14 @@ const BookDetail: React.FC = () => {
                   >
                     <EditNoteIcon fontSize="small" /> Your Notes
                   </Typography>
-                  {!isEditingNotes && book.id && (
+                  {isAuthenticated && !isEditingNotes && book.id && (
                     <IconButton size="small" onClick={() => setIsEditingNotes(true)}>
                       <EditIcon fontSize="small" />
                     </IconButton>
                   )}
                 </Box>
 
-                {isEditingNotes ? (
+                {isAuthenticated && isEditingNotes ? (
                   <>
                     <TextField
                       fullWidth
