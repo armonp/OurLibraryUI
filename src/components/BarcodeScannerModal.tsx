@@ -37,26 +37,49 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
     const reader = new BrowserMultiFormatReader(hints);
     let cancelled = false;
 
-    reader
-      .decodeFromVideoDevice(undefined, videoRef.current!, (result, err) => {
-        if (cancelled) return;
-        if (result) {
-          controlsRef.current?.stop();
-          onDetected(result.getText());
-        } else if (err && !(err instanceof NotFoundException)) {
-          // NotFoundException fires continuously while no barcode is in
-          // frame yet - that's expected, not a real error.
-          console.error("Barcode scan error:", err);
-        }
-      })
-      .then((controls) => {
+    const start = async () => {
+      // decodeFromVideoDevice(undefined, ...) defaults to a
+      // `facingMode: 'environment'` (rear-camera) constraint, which a
+      // MacBook has no match for - some browsers then hand back a
+      // "successful" stream that never produces real frames, showing as a
+      // black preview even though permission was granted. Enumerate the
+      // actual cameras instead and request one directly.
+      let deviceId: string | undefined;
+      try {
+        const devices = await BrowserMultiFormatReader.listVideoInputDevices();
+        const preferred =
+          devices.find((d) => /back|rear|environment/i.test(d.label)) ??
+          devices[0];
+        deviceId = preferred?.deviceId || undefined;
+      } catch (err) {
+        console.warn("Could not enumerate video devices:", err);
+      }
+
+      if (cancelled) return;
+
+      try {
+        const controls = await reader.decodeFromConstraints(
+          { video: deviceId ? { deviceId: { exact: deviceId } } : true },
+          videoRef.current!,
+          (result, err) => {
+            if (cancelled) return;
+            if (result) {
+              controlsRef.current?.stop();
+              onDetected(result.getText());
+            } else if (err && !(err instanceof NotFoundException)) {
+              // NotFoundException fires continuously while no barcode is in
+              // frame yet - that's expected, not a real error.
+              console.error("Barcode scan error:", err);
+            }
+          }
+        );
+
         if (cancelled) {
           controls.stop();
         } else {
           controlsRef.current = controls;
         }
-      })
-      .catch((err) => {
+      } catch (err: any) {
         console.error("Could not start camera:", err);
         setError(
           err?.name === "NotAllowedError"
@@ -65,7 +88,10 @@ const BarcodeScannerModal: React.FC<BarcodeScannerModalProps> = ({
             ? "No camera was found on this device."
             : "Could not start the camera. Please try again."
         );
-      });
+      }
+    };
+
+    start();
 
     return () => {
       cancelled = true;
