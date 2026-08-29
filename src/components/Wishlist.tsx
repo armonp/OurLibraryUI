@@ -11,6 +11,7 @@ import {
   Alert,
   Button,
 } from "@mui/material";
+import { useAuth, getAuthHeaders } from "../auth/AuthContext";
 
 interface Book {
   id: string;
@@ -25,6 +26,7 @@ const API_URL = "http://localhost:5089";
 
 const Wishlist: React.FC = () => {
   const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +45,7 @@ const Wishlist: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify({
           ...book,
@@ -132,9 +135,11 @@ const Wishlist: React.FC = () => {
             <Typography variant="body1" sx={{ mb: 2 }}>
               No books in your wishlist.
             </Typography>
-            <Button variant="contained" color="primary" href="/new-book">
-              Add Books to Your Wishlist
-            </Button>
+            {isAuthenticated && (
+              <Button variant="contained" color="primary" href="/new-book">
+                Add Books to Your Wishlist
+              </Button>
+            )}
           </Box>
         ) : (
           <Box
@@ -189,21 +194,23 @@ const Wishlist: React.FC = () => {
                     >
                       ISBN: {book.isbn}
                     </Typography>
-                    <Button
-                      variant="contained"
-                      size="small"
-                      color="primary"
-                      fullWidth
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleMoveToBookshelf(book);
-                      }}
-                      disabled={updatingBook === book.id}
-                    >
-                      {updatingBook === book.id
-                        ? "Moving..."
-                        : "Add to Bookshelf"}
-                    </Button>
+                    {isAuthenticated && (
+                      <Button
+                        variant="contained"
+                        size="small"
+                        color="primary"
+                        fullWidth
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleMoveToBookshelf(book);
+                        }}
+                        disabled={updatingBook === book.id}
+                      >
+                        {updatingBook === book.id
+                          ? "Moving..."
+                          : "Add to Bookshelf"}
+                      </Button>
+                    )}
                   </CardContent>
                 </Card>
               </Box>

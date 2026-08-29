@@ -27,6 +27,7 @@ import BusinessIcon from "@mui/icons-material/Business";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
 import EditIcon from "@mui/icons-material/Edit";
 import EditBookForm from "./EditBookForm";
+import { useAuth, getAuthHeaders } from "../auth/AuthContext";
 
 // Define the Book interface to match with backend
 interface Book {
@@ -54,6 +55,7 @@ const BookDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const [book, setBook] = useState<Book | null>(location.state?.book || null);
   const [loading, setLoading] = useState(!location.state?.book);
   const [error, setError] = useState<string | null>(null);
@@ -122,6 +124,7 @@ const BookDetail: React.FC = () => {
       setLoadingCover(true);
       const response = await fetch(`${API_URL}/v1/Books/${book.id}/cover`, {
         method: "PUT",
+        headers: getAuthHeaders(),
       });
 
       if (!response.ok) {
@@ -171,6 +174,7 @@ const BookDetail: React.FC = () => {
         method,
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(bookToAdd),
       });
@@ -222,6 +226,7 @@ const BookDetail: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedBook),
       });
@@ -263,6 +268,7 @@ const BookDetail: React.FC = () => {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(updatedBook),
       });
@@ -382,8 +388,8 @@ const BookDetail: React.FC = () => {
             Back to Magic Bookshelf
           </Button>
 
-          {/* Edit Button - Only show if book is in collection and not in edit mode */}
-          {book.id && book.status !== "Not In Collection" && !isEditMode && (
+          {/* Edit Button - Only show if logged in, book is in collection, and not in edit mode */}
+          {isAuthenticated && book.id && book.status !== "Not In Collection" && !isEditMode && (
             <Button
               onClick={handleEnterEditMode}
               variant="outlined"
@@ -453,7 +459,7 @@ const BookDetail: React.FC = () => {
                   transition: "all 0.3s ease",
                 }}
               />
-              {!book.coverURL && (book.ISBN || book.isbn) && (
+              {isAuthenticated && !book.coverURL && (book.ISBN || book.isbn) && (
                 <Button
                   variant="outlined"
                   size="small"
@@ -540,9 +546,10 @@ const BookDetail: React.FC = () => {
                   </Alert>
                 )}
 
-                {(!book.id ||
-                  !book.status ||
-                  book.status === "Not In Collection") && (
+                {isAuthenticated &&
+                  (!book.id ||
+                    !book.status ||
+                    book.status === "Not In Collection") && (
                   <Box sx={{ display: "flex", gap: 2, mb: 3, mt: 1 }}>
                     <Button
                       variant="contained"

@@ -16,6 +16,7 @@ import SaveIcon from "@mui/icons-material/Save";
 import CloseIcon from "@mui/icons-material/Close";
 import SearchIcon from "@mui/icons-material/Search";
 import AutorenewIcon from "@mui/icons-material/Autorenew";
+import { getAuthHeaders } from "../auth/AuthContext";
 
 // Define Book interface to match with backend
 interface Book {
@@ -153,6 +154,7 @@ const EditBookForm: React.FC<EditBookFormProps> = ({
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
+          ...getAuthHeaders(),
         },
         body: JSON.stringify(formData),
       });
