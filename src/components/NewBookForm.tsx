@@ -31,7 +31,9 @@ import MenuBookIcon from "@mui/icons-material/MenuBook";
 import BusinessIcon from "@mui/icons-material/Business";
 import LanguageIcon from "@mui/icons-material/Language";
 import LocalLibraryIcon from "@mui/icons-material/LocalLibrary";
+import CameraAltIcon from "@mui/icons-material/CameraAlt";
 import { BookRecommendation } from "../types/BookRecommendation";
+import BarcodeScannerModal from "./BarcodeScannerModal";
 
 interface NewBookFormProps {
   onAddBook: (
@@ -95,6 +97,13 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
   const [isSearching, setIsSearching] = useState<boolean>(false);
   const [searchError, setSearchError] = useState<string | null>(null);
 
+  // Barcode scan state
+  const [scannerOpen, setScannerOpen] = useState<boolean>(false);
+  const [isLookingUpIsbn, setIsLookingUpIsbn] = useState<boolean>(false);
+  const [scannedIsbn, setScannedIsbn] = useState<string | null>(null);
+  const [scannedBook, setScannedBook] = useState<Book | null>(null);
+  const [scanLookupError, setScanLookupError] = useState<string | null>(null);
+
   // Success notification
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
@@ -122,6 +131,46 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
     // Reset states when switching tabs
     setSearchResults([]);
     setSearchError(null);
+    setScannedBook(null);
+    setScannedIsbn(null);
+    setScanLookupError(null);
+  };
+
+  // Look up a scanned ISBN via the backend (which proxies Open Library)
+  const handleBarcodeDetected = React.useCallback(async (isbn: string) => {
+    setScannerOpen(false);
+    setScannedIsbn(isbn);
+    setScannedBook(null);
+    setScanLookupError(null);
+    setIsLookingUpIsbn(true);
+
+    try {
+      const response = await fetch(
+        `${API_URL}/v1/search/isbn/${encodeURIComponent(isbn)}`
+      );
+
+      if (!response.ok) {
+        setScanLookupError(`No book found for ISBN ${isbn}.`);
+        return;
+      }
+
+      const data = await response.json();
+      setScannedBook(data);
+    } catch (err) {
+      console.error("Error looking up scanned ISBN:", err);
+      setScanLookupError("Something went wrong looking up that barcode.");
+    } finally {
+      setIsLookingUpIsbn(false);
+    }
+  }, []);
+
+  // Fall back to manual entry, prefilling the ISBN we scanned
+  const handleEnterScannedIsbnManually = () => {
+    if (scannedIsbn) setIsbn(scannedIsbn);
+    setScannedBook(null);
+    setScanLookupError(null);
+    setScannedIsbn(null);
+    setCurrentTab(1);
   };
 
   // Handle manual form submit
@@ -381,6 +430,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
           >
             <Tab label="Search for Books" />
             <Tab label="Manual Entry" />
+            <Tab label="Scan Barcode" icon={<CameraAltIcon />} iconPosition="start" />
           </Tabs>
         </Box>
 
@@ -706,6 +756,136 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                 Add to Wishlist
               </Button>
             </Box>
+          </Box>
+        )}
+
+        {/* Scan Barcode Tab */}
+        {currentTab === 2 && (
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            {!scannedBook && !isLookingUpIsbn && !scanLookupError && (
+              <>
+                <Typography color="text.secondary" sx={{ mb: 3 }}>
+                  Use your camera to scan the barcode on the back of a book
+                  and we'll look up its details automatically.
+                </Typography>
+                <Button
+                  variant="contained"
+                  size="large"
+                  startIcon={<CameraAltIcon />}
+                  onClick={() => setScannerOpen(true)}
+                >
+                  Start Scanning
+                </Button>
+              </>
+            )}
+
+            {isLookingUpIsbn && (
+              <Box sx={{ my: 4 }}>
+                <CircularProgress />
+                <Typography sx={{ mt: 2 }} color="text.secondary">
+                  Looking up ISBN {scannedIsbn}...
+                </Typography>
+              </Box>
+            )}
+
+            {scanLookupError && (
+              <Box sx={{ maxWidth: 420, mx: "auto" }}>
+                <Alert severity="warning" sx={{ mb: 2, textAlign: "left" }}>
+                  {scanLookupError}
+                </Alert>
+                <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
+                  <Button
+                    variant="contained"
+                    startIcon={<CameraAltIcon />}
+                    onClick={() => {
+                      setScanLookupError(null);
+                      setScannedIsbn(null);
+                      setScannerOpen(true);
+                    }}
+                  >
+                    Scan Again
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    onClick={handleEnterScannedIsbnManually}
+                  >
+                    Enter Manually
+                  </Button>
+                </Box>
+              </Box>
+            )}
+
+            {scannedBook && (
+              <Box sx={{ maxWidth: 320, mx: "auto" }}>
+                <Card sx={{ textAlign: "left" }}>
+                  <CardMedia
+                    component="img"
+                    sx={{
+                      height: 220,
+                      objectFit: "contain",
+                      backgroundColor: "#f5f5f5",
+                    }}
+                    image={
+                      scannedBook.coverURL ||
+                      `https://via.placeholder.com/200x300?text=${encodeURIComponent(
+                        scannedBook.title
+                      )}`
+                    }
+                    alt={scannedBook.title}
+                  />
+                  <CardContent>
+                    <Typography variant="h6" gutterBottom>
+                      {scannedBook.title}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      {scannedBook.author || "Unknown Author"}
+                    </Typography>
+                  </CardContent>
+                </Card>
+                <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
+                  <Button
+                    variant="contained"
+                    fullWidth
+                    startIcon={<AddCircleIcon />}
+                    onClick={async () => {
+                      await handleSelectBook(scannedBook, "bookshelf");
+                      setScannedBook(null);
+                      setScannedIsbn(null);
+                    }}
+                  >
+                    Add to Shelf
+                  </Button>
+                  <Button
+                    variant="outlined"
+                    color="secondary"
+                    fullWidth
+                    onClick={async () => {
+                      await handleSelectBook(scannedBook, "wishlist");
+                      setScannedBook(null);
+                      setScannedIsbn(null);
+                    }}
+                  >
+                    Add to Wishlist
+                  </Button>
+                </Box>
+                <Button
+                  sx={{ mt: 2 }}
+                  onClick={() => {
+                    setScannedBook(null);
+                    setScannedIsbn(null);
+                    setScannerOpen(true);
+                  }}
+                >
+                  Scan Another
+                </Button>
+              </Box>
+            )}
+
+            <BarcodeScannerModal
+              open={scannerOpen}
+              onClose={() => setScannerOpen(false)}
+              onDetected={handleBarcodeDetected}
+            />
           </Box>
         )}
 
