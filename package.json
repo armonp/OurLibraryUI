@@ -36,7 +36,6 @@
   "devDependencies": {
     "serve": "^14.2.4"
   },
-  "homepage": "http://yourusername.github.io/react-library-app",
   "browserslist": {
     "production": [
       ">0.2%",
