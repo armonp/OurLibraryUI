@@ -51,19 +51,57 @@ const SORT_OPTIONS = [
   { value: "author-desc", label: "Author Descending" },
 ];
 
+const PAGE_SIZE_OPTIONS = [12, 24, 48, 96];
+const DEFAULT_PAGE_SIZE = 12;
+
+// Persisted across navigation (e.g. viewing a book and coming back) so the
+// shelf reopens where the user left it, regardless of how they got back.
+const VIEW_STATE_KEY = "bookshelf-view-state";
+
+interface StoredViewState {
+  sortOption: string;
+  currentPage: number;
+  pageSize: number;
+}
+
+const loadStoredViewState = (): StoredViewState | null => {
+  try {
+    const raw = sessionStorage.getItem(VIEW_STATE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+};
+
 const Bookshelf: React.FC = () => {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
+  const storedViewState = loadStoredViewState();
   const [books, setBooks] = useState<Book[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortOption, setSortOption] = useState("date-added-desc"); // Default to date added, newest first
+  const [sortOption, setSortOption] = useState(
+    storedViewState?.sortOption || "date-added-desc"
+  ); // Default to date added, newest first
   const [loadingCovers, setLoadingCovers] = useState<Record<string, boolean>>(
     {}
   );
-  const [currentPage, setCurrentPage] = useState(1);
-  const booksPerPage = 12;
+  const [currentPage, setCurrentPage] = useState(storedViewState?.currentPage || 1);
+  const [booksPerPage, setBooksPerPage] = useState(
+    storedViewState?.pageSize || DEFAULT_PAGE_SIZE
+  );
+
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        VIEW_STATE_KEY,
+        JSON.stringify({ sortOption, currentPage, pageSize: booksPerPage })
+      );
+    } catch {
+      // Ignore storage failures (e.g. private browsing) - persistence is a nice-to-have.
+    }
+  }, [sortOption, currentPage, booksPerPage]);
 
   useEffect(() => {
     const fetchBooks = async () => {
@@ -151,10 +189,20 @@ const Bookshelf: React.FC = () => {
   );
 
   // Calculate pagination values
-  const indexOfLastBook = currentPage * booksPerPage;
+  const totalPages = Math.max(1, Math.ceil(filteredBooks.length / booksPerPage));
+  // Clamp in case the stored/previous page no longer fits (e.g. fewer books, smaller page size).
+  const safeCurrentPage = Math.min(currentPage, totalPages);
+  const indexOfLastBook = safeCurrentPage * booksPerPage;
   const indexOfFirstBook = indexOfLastBook - booksPerPage;
   const currentBooks = filteredBooks.slice(indexOfFirstBook, indexOfLastBook);
-  const totalPages = Math.ceil(filteredBooks.length / booksPerPage);
+
+  useEffect(() => {
+    // Skip while books are still loading, since the empty list would otherwise
+    // clamp a persisted page number back to 1 before the real count is known.
+    if (!loading && currentPage !== safeCurrentPage) {
+      setCurrentPage(safeCurrentPage);
+    }
+  }, [loading, safeCurrentPage, currentPage]);
 
   // Handle page change
   const handlePageChange = (
@@ -164,6 +212,21 @@ const Bookshelf: React.FC = () => {
     setCurrentPage(value);
     // Scroll to top when changing pages
     window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const handleSortChange = (e: SelectChangeEvent) => {
+    setSortOption(e.target.value);
+    setCurrentPage(1);
+  };
+
+  const handlePageSizeChange = (e: SelectChangeEvent<number>) => {
+    setBooksPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
+
+  const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+    setCurrentPage(1);
   };
 
   const booksWithoutCovers = books.filter((book) => !book.coverURL && book.isbn);
@@ -192,7 +255,7 @@ const Bookshelf: React.FC = () => {
         <TextField
           placeholder="Search books..."
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleSearchChange}
           size="small"
           sx={{ flex: "1 1 260px", maxWidth: 420 }}
           slotProps={{
@@ -208,13 +271,26 @@ const Bookshelf: React.FC = () => {
 
         <Select
           value={sortOption}
-          onChange={(e: SelectChangeEvent) => setSortOption(e.target.value)}
+          onChange={handleSortChange}
           size="small"
           sx={{ minWidth: 220 }}
         >
           {SORT_OPTIONS.map((option) => (
             <MenuItem key={option.value} value={option.value}>
               {option.label}
+            </MenuItem>
+          ))}
+        </Select>
+
+        <Select
+          value={booksPerPage}
+          onChange={handlePageSizeChange}
+          size="small"
+          sx={{ minWidth: 150 }}
+        >
+          {PAGE_SIZE_OPTIONS.map((size) => (
+            <MenuItem key={size} value={size}>
+              {size} per page
             </MenuItem>
           ))}
         </Select>
@@ -317,7 +393,7 @@ const Bookshelf: React.FC = () => {
             <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
               <Pagination
                 count={totalPages}
-                page={currentPage}
+                page={safeCurrentPage}
                 onChange={handlePageChange}
                 color="primary"
                 size="large"
