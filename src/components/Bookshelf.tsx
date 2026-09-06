@@ -33,7 +33,7 @@ interface Book {
   dateAdded?: string; // ISO string or undefined
 }
 
-const API_URL = "http://localhost:5089";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
 
 const COVER_COLORS = ["#0F9B8E", "#FF6B4A", "#F2C46D", "#7C9CE0", "#0B6F65", "#E4AF8E", "#A98FD2"];
 

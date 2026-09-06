@@ -44,7 +44,7 @@ interface EditBookFormProps {
   onCancel: () => void;
 }
 
-const API_URL = "http://localhost:5089";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
 
 const EditBookForm: React.FC<EditBookFormProps> = ({
   book,

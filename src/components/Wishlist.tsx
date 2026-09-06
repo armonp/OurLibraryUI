@@ -22,7 +22,7 @@ interface Book {
   status?: string;
 }
 
-const API_URL = "http://localhost:5089";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
 
 const Wishlist: React.FC = () => {
   const navigate = useNavigate();

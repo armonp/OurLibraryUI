@@ -4,7 +4,7 @@ import { Box, Typography } from "@mui/material";
 import AutoStoriesRoundedIcon from "@mui/icons-material/AutoStoriesRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 
-const API_URL = "http://localhost:5089";
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
 
 interface Book {
   status?: string;
