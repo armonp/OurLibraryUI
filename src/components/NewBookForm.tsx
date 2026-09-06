@@ -114,11 +114,18 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
   const [duplicateModalOpen, setDuplicateModalOpen] = useState<boolean>(false);
   const [duplicateBook, setDuplicateBook] = useState<SharedBook | null>(null);
 
+  // True while an add-book request is in flight. Every "Add" button below is
+  // disabled while this is true so a slow response (or an impatient click)
+  // can't fire a second request and create a duplicate entry.
+  const [isAddingBook, setIsAddingBook] = useState<boolean>(false);
+
   // Wraps onAddBook so a duplicate ISBN shows a modal instead of failing silently
   const addBookSafely = async (
     book: Parameters<NewBookFormProps["onAddBook"]>[0],
     destination: string = "bookshelf"
   ) => {
+    if (isAddingBook) return null;
+    setIsAddingBook(true);
     try {
       return await onAddBook(book, destination);
     } catch (error) {
@@ -128,6 +135,8 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
         return null;
       }
       throw error;
+    } finally {
+      setIsAddingBook(false);
     }
   };
 
@@ -589,6 +598,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                                   variant="contained"
                                   size="small"
                                   color="primary"
+                                  disabled={isAddingBook}
                                   onClick={() =>
                                     handleSelectBook(book, "bookshelf")
                                   }
@@ -626,6 +636,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                                   variant="outlined"
                                   size="small"
                                   color="secondary"
+                                  disabled={isAddingBook}
                                   onClick={() =>
                                     handleSelectBook(book, "wishlist")
                                   }
@@ -756,6 +767,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                 type="button"
                 variant="contained"
                 fullWidth
+                disabled={isAddingBook}
                 onClick={(e) => {
                   e.preventDefault();
                   if (title && author && isbn) {
@@ -763,13 +775,14 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                   }
                 }}
               >
-                Add to Bookshelf
+                {isAddingBook ? "Adding..." : "Add to Bookshelf"}
               </Button>
               <Button
                 type="button"
                 variant="outlined"
                 color="secondary"
                 fullWidth
+                disabled={isAddingBook}
                 onClick={(e) => {
                   e.preventDefault();
                   if (title && author && isbn) {
@@ -777,7 +790,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                   }
                 }}
               >
-                Add to Wishlist
+                {isAddingBook ? "Adding..." : "Add to Wishlist"}
               </Button>
             </Box>
           </Box>
@@ -870,6 +883,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                   <Button
                     variant="contained"
                     fullWidth
+                    disabled={isAddingBook}
                     startIcon={<AddCircleIcon />}
                     onClick={async () => {
                       await handleSelectBook(scannedBook, "bookshelf");
@@ -883,6 +897,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                     variant="outlined"
                     color="secondary"
                     fullWidth
+                    disabled={isAddingBook}
                     onClick={async () => {
                       await handleSelectBook(scannedBook, "wishlist");
                       setScannedBook(null);
@@ -1035,6 +1050,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                   <Button
                     variant="contained"
                     color="primary"
+                    disabled={isAddingBook}
                     onClick={() => {
                       addBookSafely(
                         {
@@ -1054,6 +1070,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                   <Button
                     variant="outlined"
                     color="secondary"
+                    disabled={isAddingBook}
                     onClick={() => {
                       addBookSafely(
                         {
@@ -1171,6 +1188,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                       variant="contained"
                       color="primary"
                       fullWidth
+                      disabled={isAddingBook}
                       startIcon={<AddCircleIcon />}
                       onClick={() => {
                         handleSelectBook(selectedBook, "bookshelf");
@@ -1183,6 +1201,7 @@ const NewBookForm: React.FC<NewBookFormProps> = ({ onAddBook }) => {
                       variant="outlined"
                       color="secondary"
                       fullWidth
+                      disabled={isAddingBook}
                       onClick={() => {
                         handleSelectBook(selectedBook, "wishlist");
                         handleCloseModal();
