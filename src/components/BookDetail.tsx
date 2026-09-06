@@ -13,11 +13,17 @@ import {
   Snackbar,
   TextField,
   IconButton,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CheckIcon from "@mui/icons-material/Check";
 import BookmarkIcon from "@mui/icons-material/Bookmark";
 import RemoveCircleIcon from "@mui/icons-material/RemoveCircle";
+import DeleteForeverIcon from "@mui/icons-material/DeleteForever";
 import MenuBookIcon from "@mui/icons-material/MenuBook";
 import CategoryIcon from "@mui/icons-material/Category";
 import DescriptionIcon from "@mui/icons-material/Description";
@@ -106,6 +112,9 @@ const BookDetail: React.FC = () => {
   const [addingToCollection, setAddingToCollection] = useState(false);
   const [addSuccess, setAddSuccess] = useState<string | null>(null);
   const [addError, setAddError] = useState<string | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
@@ -294,6 +303,36 @@ const BookDetail: React.FC = () => {
     }
   };
 
+  const handleDeleteBook = async () => {
+    if (!book) return;
+
+    try {
+      setIsDeleting(true);
+      setDeleteError(null);
+
+      const response = await fetch(`${API_URL}/v1/Books/${book.id}`, {
+        method: "DELETE",
+        headers: getAuthHeaders(),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to delete book: ${response.status} ${response.statusText}`
+        );
+      }
+
+      setDeleteDialogOpen(false);
+      navigate("/bookshelf");
+    } catch (err) {
+      console.error("Error deleting book:", err);
+      setDeleteError(
+        err instanceof Error ? err.message : "Failed to delete book"
+      );
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const saveNotes = async () => {
     if (!book) return;
 
@@ -407,15 +446,30 @@ const BookDetail: React.FC = () => {
           Back to Bookshelf
         </Button>
 
-        {isAuthenticated && book.id && isInCollection && !isEditMode && (
-          <Button
-            onClick={handleEnterEditMode}
-            variant="outlined"
-            color="secondary"
-            startIcon={<EditIcon />}
-          >
-            Edit Details
-          </Button>
+        {isAuthenticated && book.id && !isEditMode && (
+          <Box sx={{ display: "flex", gap: 1.5, flexWrap: "wrap" }}>
+            {isInCollection && (
+              <Button
+                onClick={handleEnterEditMode}
+                variant="outlined"
+                color="secondary"
+                startIcon={<EditIcon />}
+              >
+                Edit Details
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                setDeleteError(null);
+                setDeleteDialogOpen(true);
+              }}
+              variant="outlined"
+              color="error"
+              startIcon={<DeleteForeverIcon />}
+            >
+              Delete Book
+            </Button>
+          </Box>
         )}
       </Box>
 
@@ -641,6 +695,39 @@ const BookDetail: React.FC = () => {
           </Box>
         </Paper>
       )}
+
+      <Dialog
+        open={deleteDialogOpen}
+        onClose={() => !isDeleting && setDeleteDialogOpen(false)}
+        aria-labelledby="delete-book-dialog-title"
+      >
+        <DialogTitle id="delete-book-dialog-title">Delete this book?</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            This will permanently remove "{book.title}" from your library.
+            This can't be undone.
+          </DialogContentText>
+          {deleteError && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {deleteError}
+            </Alert>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDeleteDialogOpen(false)} disabled={isDeleting}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleDeleteBook}
+            color="error"
+            variant="contained"
+            disabled={isDeleting}
+            startIcon={isDeleting ? <CircularProgress size={16} /> : <DeleteForeverIcon />}
+          >
+            {isDeleting ? "Deleting..." : "Delete Permanently"}
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Container>
   );
 };
