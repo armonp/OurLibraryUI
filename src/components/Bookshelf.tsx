@@ -31,6 +31,10 @@ interface Book {
   coverURL?: string;
   status?: string;
   dateAdded?: string; // ISO string or undefined
+  publishers?: string[];
+  genres?: string[];
+  subjects?: string[];
+  description?: string;
 }
 
 const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5089";
@@ -146,9 +150,26 @@ const Bookshelf: React.FC = () => {
     return comparison;
   });
 
-  const filteredBooks = sortedBooks.filter((book) =>
-    book.title.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const normalizedSearchTerm = searchTerm.trim().toLowerCase();
+
+  const filteredBooks = normalizedSearchTerm
+    ? sortedBooks.filter((book) => {
+        const searchableText = [
+          book.title,
+          book.author,
+          book.isbn,
+          book.description,
+          ...(book.genres || []),
+          ...(book.subjects || []),
+          ...(book.publishers || []),
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase();
+
+        return searchableText.includes(normalizedSearchTerm);
+      })
+    : sortedBooks;
 
   // Calculate pagination values
   const indexOfLastBook = currentPage * booksPerPage;
@@ -190,7 +211,7 @@ const Bookshelf: React.FC = () => {
         }}
       >
         <TextField
-          placeholder="Search books..."
+          placeholder="Search by title, author, genre, keyword..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           size="small"
