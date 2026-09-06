@@ -1,3 +1,7 @@
 node_modules
 .github/copilot-instructions.md
 .env
+.claude/
+.vscode/
+.DS_Store
+/build
